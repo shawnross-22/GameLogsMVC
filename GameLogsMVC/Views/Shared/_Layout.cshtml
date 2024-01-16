@@ -1,0 +1,157 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - GameLogsMVC</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/GameLogsMVC.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+    <style>
+        /* Your custom CSS goes here */
+        .person-icon {
+            position: absolute;
+            top: 50%; /* Adjust as needed */
+            right: 0;
+            transform: translateY(-50%); /* Vertically center the icon */
+            cursor: pointer;
+            padding-right: 15px;
+        }
+
+        #userNav{
+            position: absolute;
+            top: 50%; /* Adjust as needed */
+            right: 0;
+            transform: translateY(-50%); /* Vertically center the icon */
+            cursor: pointer;
+            padding-right: 15px;
+        }
+
+        .person-icon i {
+            cursor: pointer;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 200px; /* Adjust width as needed */
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            display: none;
+        }
+
+        .person-icon:hover .overlay {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GameLogsMVC</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="MLB">MLB</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NCAAF">NCAAF</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NFL">NFL</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NBA">NBA</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                        </li>
+                        <li id="loginIcon" class="nav-item person-icon" style="margin: auto; display: flex">
+                            <i class="fas fa-user"></i>
+                            <div class="overlay" id="loginContainer">
+                                <form id="loginForm">
+                                    <input type="text" id="usernameInput" placeholder="Username" />
+                                    <input type="password" id="passwordInput" placeholder="Password" />
+                                    <button type="button" onclick="login()">Login</button>
+                                    <div id="messageContainer"></div>
+                                </form>
+                            </div>
+                        </li>
+                        <li id="userNav" class="nav-item" style="display: none">
+                            <a id="welcomeContainer" class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - GameLogsMVC - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Check if the login cookie exists
+        if(document.cookie != null){
+            document.getElementById("welcomeContainer").innerHTML = document.cookie.split(";")[0].split("=")[1].trim();
+            document.getElementById("loginIcon").style.display = "none";
+            document.getElementById("userNav").style.display = "flex";
+        }       
+    });
+
+    function login(){
+        var message = document.getElementById("messageContainer");
+        var id = document.getElementById("usernameInput").value;
+        var password = document.getElementById("passwordInput").value;
+        var loginContainer = document.getElementById("loginContainer");
+        var welcomeContainer = document.getElementById("welcomeContainer")
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/Home/Login", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        const data = {
+            ID: id,
+            Password: password         
+        };
+        const jsonData = JSON.stringify(data);
+        xhr.send(jsonData);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                if (xhr.status === 200) {
+                    if(xhr.responseText == "Success."){
+                        welcomeContainer.innerHTML = id;
+                        document.getElementById("loginIcon").style.display = "none";
+                        document.getElementById("userNav").style.display = "flex";
+                    }
+                    else{
+                        document.getElementById("usernameInput").value = "";
+                        document.getElementById("passwordInput").value = "";
+                        message.innerHTML = xhr.responseText;
+                    }
+                }
+            }
+        }
+    }   
+</script>

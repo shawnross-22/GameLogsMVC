@@ -1,0 +1,11 @@
+﻿@model GameLogsMVC.Models.ViewData.TeamsView
+
+<h2>NBA Teams</h2>
+<ul>
+    @foreach (var team in Model.teams)
+    {
+        <li>
+            <a href="@Url.Action("Schedule", "Home", new { league = "NBA", team = team.team.displayName, id=team.team.id, dates = "2024"})">@team.team.displayName</a><br />
+        </li>
+    }
+</ul>

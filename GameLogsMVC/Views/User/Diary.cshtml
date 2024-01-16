@@ -1,0 +1,124 @@
+﻿@model GameLogsMVC.Models.ViewData.DiaryView
+
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+</style>
+
+<h2>Diary</h2>
+<h3>MLB Games</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Score</th>
+            <th>Location</th>
+            <!-- Add more columns for other attributes as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.MLBGames)
+        {
+            <tr>
+                <td>@game.Date</td>
+                <td>@game.Home</td>
+                <td>@game.Away</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
+                <td>@game.Location</td>
+                <!-- Add more cells for other attributes as needed -->
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>NBA Games</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Score</th>
+            <th>Location</th>
+            <!-- Add more columns for other attributes as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.NBAGames)
+        {
+            <tr>
+                <td>@game.Date</td>
+                <td>@game.Home</td>
+                <td>@game.Away</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
+                <td>@game.Location</td>
+                <!-- Add more cells for other attributes as needed -->
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>NFL Games</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Score</th>
+            <th>Location</th>
+            <!-- Add more columns for other attributes as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.NFLGames)
+        {
+            <tr>
+                <td>@game.Date</td>
+                <td>@game.Home</td>
+                <td>@game.Away</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
+                <td>@game.Location</td>
+                <!-- Add more cells for other attributes as needed -->
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>NCAAF Games</h3>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Score</th>
+            <th>Location</th>
+            <!-- Add more columns for other attributes as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.NCAAFGames)
+        {
+            <tr>
+                <td>@game.Date</td>
+                <td>@game.Home</td>
+                <td>@game.Away</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
+                <td>@game.Location</td>
+                <!-- Add more cells for other attributes as needed -->
+            </tr>
+        }
+    </tbody>
+</table>
+

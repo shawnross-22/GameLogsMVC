@@ -1,0 +1,60 @@
+﻿@model GameLogsMVC.Models.ViewData.UserView
+<style>
+    #userSummary {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin: auto;
+        padding: 10px;
+    }
+
+        #userSummary h2,
+        #userSummary h3 {
+            margin: 0;
+        }
+
+    #userNavBar {
+        background-color: lightgray;
+        display: flex;
+        justify-content: space-around;
+        margin: auto;
+        padding: 10px;
+    }
+
+    .navbarUL {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    .nav-item {
+        margin-right: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+    }
+</style>
+
+<div id="userSummary">
+    <h2>@Model.ID</h2>
+    <h3>Games Attended: @Model.Count</h3>
+    <h3>This Year: @Model.CountCurrent</h3>
+</div>
+
+<div id="userNavBar" class="navbar">
+    <ul class="navbarUL">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary">Diary</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats">Stats</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges">Stats</a>
+        </li>
+    </ul>
+</div>
+
