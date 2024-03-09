@@ -11,5 +11,9 @@ namespace GameLogsMVC.Models.DBData
         public string Score { get; set; }
         public string? League { get; set; }
         public string Location { get; set; }
+        public string Duration { get; set; }
+        public string ImpactPlay { get; set; }
+        public string GameNote { get; set; }
+        public string NeutralSite { get; set; }
     }
 }

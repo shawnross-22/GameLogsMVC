@@ -7,6 +7,7 @@
         public ScheduleView? playInSchedule { get; set; }
         public string League { get; set; }
         public string Team { get; set; }
+        public string Logo { get; set; }
         public string ID { get; set; }
         public string Dates { get; set; }
     }
@@ -27,6 +28,6 @@
         public string date { get; set; }
         public string opponent { get; set; }
         public string score { get; set; }
-        public bool attended { get; set; }
+        public bool? attended { get; set; }
     }
 }

@@ -11,114 +11,179 @@
         padding: 8px;
         text-align: left;
     }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0); /* Semi-transparent black overlay */
+        display: none; /* Initially hidden */
+    }
+
+    #userSummary {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin: auto;
+        padding: 10px;
+    }
+
+        #userSummary h2,
+        #userSummary h3 {
+            margin: 0;
+        }
+
+    #userNavBar {
+        background-color: lightgray;
+        display: flex;
+        justify-content: space-around;
+        margin: auto;
+        padding: 10px;
+    }
+
+    .navbarUL {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    .nav-item {
+        margin-right: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+    }
 </style>
 
-<h2>Diary</h2>
-<h3>MLB Games</h3>
-<table border="1">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Score</th>
-            <th>Location</th>
-            <!-- Add more columns for other attributes as needed -->
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var game in Model.MLBGames)
-        {
-            <tr>
-                <td>@game.Date</td>
-                <td>@game.Home</td>
-                <td>@game.Away</td>
-                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
-                <td>@game.Location</td>
-                <!-- Add more cells for other attributes as needed -->
-            </tr>
-        }
-    </tbody>
-</table>
+<div id="userNavBar" class="navbar">
+    <ul class="navbarUL">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.User">@Model.User</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.User" asp-route-league="MLB">Diary</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.User" asp-route-league="MLB">Stats</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges" asp-route-userName="@Model.User">Badges</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Followers" asp-route-userName="@Model.User">Followers</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Following" asp-route-userName="@Model.User">Following</a>
+        </li>
+    </ul>
+</div>
 
-<h3>NBA Games</h3>
-<table border="1">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Score</th>
-            <th>Location</th>
-            <!-- Add more columns for other attributes as needed -->
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var game in Model.NBAGames)
-        {
+<select id="leagueSelect" onchange="ChangeLeague(this.value)">
+    <option value="MLB" selected="@(Model.League == "MLB")">MLB</option>
+    <option value="NBA" selected="@(Model.League == "NBA")">NBA</option>
+    <option value="NCAAF" selected="@(Model.League == "NCAAF")">NCAAF</option>
+    <option value="NFL" selected="@(Model.League == "NFL")">NFL</option>
+    <option value="NCAAB" selected="@(Model.League == "NCAAB")">NCAAB</option>
+</select>
+    <table border="1">
+        <thead>
             <tr>
-                <td>@game.Date</td>
-                <td>@game.Home</td>
-                <td>@game.Away</td>
-                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
-                <td>@game.Location</td>
-                <!-- Add more cells for other attributes as needed -->
+                <th>Date</th>
+                <th>Home Team</th>
+                <th>Away Team</th>
+                <th>Score</th>
+                <th>Location</th>
+                @if(Model.GameResult.attended != null)
+                {
+                    <th>Attended</th>
+                }
+            
+                <!-- Add more columns for other attributes as needed -->
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.GameResult.games.Count(); i++)
+            {
+                <tr>
+                    <td>@Model.GameResult.games[i].Date</td>
+                    <td>@Model.GameResult.games[i].Home</td>
+                    <td>@Model.GameResult.games[i].Away</td>
+                    <td><a href="@Url.Action("BoxScore", "Home", new { id = Model.GameResult.games[i].ID, league = Model.GameResult.games[i].League})">@Model.GameResult.games[i].Score</a></td>
+                    <td>@Model.GameResult.games[i].Location</td>
+                @if(Model.GameResult.attended != null)
+                {
+                    <td><input type="checkbox" id="myCheck" onclick="Log(@Model.GameResult.games[i].ID, '@Model.GameResult.games[i].Date', this)" @(Model.GameResult.attended[i] == true ? "checked" : "")></td>
+                }
+                    <!-- Add more cells for other attributes as needed -->
+                </tr>
+            }
+            
+        </tbody>
+    </table>
 
-<h3>NFL Games</h3>
-<table border="1">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Score</th>
-            <th>Location</th>
-            <!-- Add more columns for other attributes as needed -->
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var game in Model.NFLGames)
-        {
-            <tr>
-                <td>@game.Date</td>
-                <td>@game.Home</td>
-                <td>@game.Away</td>
-                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
-                <td>@game.Location</td>
-                <!-- Add more cells for other attributes as needed -->
-            </tr>
-        }
-    </tbody>
-</table>
 
-<h3>NCAAF Games</h3>
-<table border="1">
-    <thead>
-        <tr>
-            <th>Date</th>
-            <th>Home Team</th>
-            <th>Away Team</th>
-            <th>Score</th>
-            <th>Location</th>
-            <!-- Add more columns for other attributes as needed -->
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var game in Model.NCAAFGames)
-        {
-            <tr>
-                <td>@game.Date</td>
-                <td>@game.Home</td>
-                <td>@game.Away</td>
-                <td><a href="@Url.Action("BoxScore", "Home", new { id = game.ID, league = game.League})">@game.Score</a></td>
-                <td>@game.Location</td>
-                <!-- Add more cells for other attributes as needed -->
-            </tr>
+
+
+<script>
+    function ChangeLeague(selectedLeague) {
+        var newUrl = "/User/Diary?userName=" + encodeURIComponent('@Model.User') + "&league=" + encodeURIComponent(selectedLeague);
+        window.location.href = newUrl;
+    }
+
+
+    function Log(id, date, checkbox) {
+        @*document.getElementById('overlay').style.display = 'block';*@
+        if (checkbox.checked) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/Home/Log", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            const data = {
+                ID: String(id),
+                Home: "",
+                Away: "",
+                Date: String(date),
+                Score: "",
+                League: '@Model.League',
+                Location: ""
+            };
+            const jsonData = JSON.stringify(data);
+            xhr.send(jsonData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                    if (xhr.status === 200) {
+                        if (xhr.responseText == "Success") {
+                            @*document.getElementById('overlay').style.display = 'none';*@
+                        }
+                    }
+                }
+            }
         }
-    </tbody>
-</table>
+        else {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/Home/Unlog", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            const data = {
+                UserID: "",
+                GameID: String(id)
+            };
+            const jsonData = JSON.stringify(data);
+            xhr.send(jsonData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                    if (xhr.status === 200) {
+                        if (xhr.responseText == "Success") {
+                            document.getElementById('overlay').style.display = 'none';
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+</script>
 

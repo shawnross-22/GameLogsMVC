@@ -6,9 +6,9 @@ namespace GameLogsMVC.Models.ViewData
     {
         public TeamsView()
         {
-            teams = new List<Team>();
+            teams = new List<DBData.Team>();
         }
 
-        public List<PullData.Team> teams { get; set; }
+        public List<DBData.Team> teams { get; set; }
     }
 }

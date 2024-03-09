@@ -1,0 +1,105 @@
+﻿@model GameLogsMVC.Models.ViewData.FollowerView
+<style>
+    .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .custom-table th, .custom-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .custom-table th {
+            background-color: #343a40;
+            color: white;
+        }
+
+        .custom-table tbody tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .custom-table tbody tr:hover {
+            background-color: #ddd;
+        }
+
+    #userSummary {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin: auto;
+        padding: 10px;
+    }
+
+        #userSummary h2,
+        #userSummary h3 {
+            margin: 0;
+        }
+
+    #userNavBar {
+        background-color: lightgray;
+        display: flex;
+        justify-content: space-around;
+        margin: auto;
+        padding: 10px;
+    }
+
+    .navbarUL {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    .nav-item {
+        margin-right: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+    }
+</style>
+
+
+<div id="userNavBar" class="navbar">
+    <ul class="navbarUL">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.User">@Model.User</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.User" asp-route-league="MLB">Diary</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.User" asp-route-league="MLB">Stats</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges" asp-route-userName="@Model.User">Badges</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Followers" asp-route-userName="@Model.User">Followers</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Following" asp-route-userName="@Model.User">Following</a>
+        </li>
+    </ul>
+</div>
+
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Games Attended</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.userFollows.Count(); i++)
+        {
+            <tr>
+                <td><a href="@Url.Action("Index", "User", new { userName = Model.userFollows[i].FollowingID})">@Model.userFollows[i].FollowingID</a></td>
+                <td>@Model.followGames[i]</td>
+            </tr>
+        }
+    </tbody>
+</table>

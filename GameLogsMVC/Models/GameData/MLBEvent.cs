@@ -50,7 +50,7 @@ namespace GameLogsMVC.Models.GameData
 
     public class PlayerStat
     {
-        public string Type { get; set; }
+        public string? Type { get; set; }
         public string Name { get; set; }
         public List<string> Labels { get; set; }
         public List<PlayerAthlete> Athletes { get; set; }
@@ -69,6 +69,7 @@ namespace GameLogsMVC.Models.GameData
 
     public class Athlete
     {
+        public string ID { get; set; }
         public string DisplayName { get; set; }
         public string Jersey { get; set; }
     }
@@ -80,6 +81,7 @@ namespace GameLogsMVC.Models.GameData
 
     public class Period
     {
+        public string Type { get; set; }
         public int Number { get; set; }
     }
 
@@ -125,12 +127,22 @@ namespace GameLogsMVC.Models.GameData
     {
         public List<Competitors> Competitors { get; set;}
         public string Date { get; set; }
+        public bool NeutralSite { get; set; }
     }
+
+    public class Type 
+    { 
+        public string Abbreviation { get; set; }
+    }
+
+
 
     public class Header
     {
+        public string ID { get; set; }
         public List<Competitions> Competitions { get; set; }
         public League League { get; set; }
+        public string GameNote { get; set; }
     }
 
     public class League
@@ -141,11 +153,39 @@ namespace GameLogsMVC.Models.GameData
     public class ScoringPlay
     {
         public string Text { get; set; }
+        public Type Type { get; set; }
         public Period Period { get; set; }
         public Clock Clock { get; set; }
         public Team Team { get; set; }
         public string AwayScore { get; set; }
         public string HomeScore { get; set; }
+    }
+
+    public class Previous
+    {
+        public List<Play> Plays { get; set; }
+    }
+
+    public class Drive
+    {
+        public List<Previous> Previous { get; set; }
+    }
+
+    public class WinProbability
+    {
+        public double HomeWinPercentage { get; set; }
+        public string PlayID { get; set; }
+    }
+
+    public class Play
+    {
+        public string ID { get; set; }
+        public string Text { get; set; }
+        public Period Period { get; set; }   
+        public Clock Clock { get; set; }
+        public int AwayScore { get; set; }
+        public int HomeScore { get; set; }
+        public int Outs { get; set; }
     }
 
     public class GameEvent
@@ -154,5 +194,8 @@ namespace GameLogsMVC.Models.GameData
         public GameInfo GameInfo { get; set; }
         public Header Header { get; set; }
         public List<ScoringPlay> ScoringPlays { get; set; }
+        public Drive Drives { get; set; }
+        public List<WinProbability> WinProbability { get; set; }
+        public List<Play> Plays { get; set; }
     }
 }

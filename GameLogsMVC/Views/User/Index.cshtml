@@ -1,5 +1,30 @@
 ﻿@model GameLogsMVC.Models.ViewData.UserView
+@using Newtonsoft.Json
+
 <style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .gamesContainer {
+        width: 100%;
+    }
+
+    .headerBar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background-color: #f0f0f0;
+    }
+
     #userSummary {
         display: flex;
         justify-content: space-around;
@@ -19,6 +44,7 @@
         justify-content: space-around;
         margin: auto;
         padding: 10px;
+        margin-bottom: 20px;
     }
 
     .navbarUL {
@@ -36,10 +62,157 @@
         text-decoration: none;
         color: #333;
     }
+
+    #changeFavsForm {
+        display: none;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1;
+        padding: 20px;
+        border: 2px solid #000;
+        background-color: #fff;
+        border-radius: 10px;
+    }
 </style>
 
+<script>
+    var sameGames = @Html.Raw(Json.Serialize(Model.SameGames));
+</script>
+
+<div id="changeFavsForm">
+    <div>
+        <button type="button" class="close-btn" onclick="hideChangeOverlay()">X</button>
+    </div>
+    <h2 style="align-self: center">Choose Favorites</h2>
+    <select id="leagueSelect" onchange="ChangeLeague(this.value)">
+        <option value="MLB">MLB</option>
+        <option value="NBA">NBA</option>
+        <option value="NFL">NFL</option>
+        <option value="NCAAF">NCAAF</option>
+    </select>
+
+    <button type="button" id="saveButton" onclick="SaveChanges('@JsonConvert.SerializeObject(Model)')">Save</button>
+    
+</div>
+
+<script>
+    function seeAllGames() {
+        var gamesBody = document.getElementById('gamesBody');
+        gamesBody.innerHTML = '';
+        if (document.getElementById('seeAllButton').innerText == "See All") {
+            document.getElementById('seeAllButton').innerText = "Collapse";
+            sameGames.forEach(function (game) {
+                var row = document.createElement('tr');
+                row.innerHTML = '<td>' + game.date + '</td>' +
+                    '<td>' + game.home + '</td>' +
+                    '<td>' + game.away + '</td>' +
+                    '<td><a href="/Home/BoxScore?id=' + game.id + '&league=' + game.league + '">' + game.score + '</a></td>' +
+                    '<td>' + game.location + '</td>';
+                gamesBody.appendChild(row);
+            });
+        }
+        else {
+            document.getElementById('seeAllButton').innerText = "See All";
+            for (var i = 0; i < Math.min(5, sameGames.length); i++) {
+                var game = sameGames[i];
+                var row = document.createElement('tr');
+                row.innerHTML = '<td>' + game.date + '</td>' +
+                    '<td>' + game.home + '</td>' +
+                    '<td>' + game.away + '</td>' +
+                    '<td><a href="/Home/BoxScore?id=' + game.id + '&league=' + game.league + '">' + game.score + '</a></td>' +
+                    '<td>' + game.location + '</td>';
+                gamesBody.appendChild(row);
+            }
+        }
+    }
+
+    function openFavTeamForm() {
+        document.getElementById('changeFavsForm').style.display = "block";
+    }
+
+    function ChangeLeague(league) {
+
+        var allTeamSections = document.querySelectorAll('.favSelect');
+        allTeamSections.forEach(function (section) {
+            section.style.display = 'none';
+        });
+        // Show the selected league's team section
+        document.getElementById(league + 'Teams').style.display = 'block';
+
+    }
+
+    function ChangeTeam(team, teamsJson) {
+        var teams = JSON.parse(teamsJson);
+        
+
+        // Find the team object in the array with the matching name
+        var selectedTeam = teams.find(function (item) {
+            return item.Name === team;
+        });
+
+        if (selectedTeam) {
+            var league = document.getElementById('leagueSelect').value; // Get the selected league
+            var logoId = league + 'logo';
+            document.getElementById(logoId).src = selectedTeam.Url;
+        }
+    }
+
+    function hideChangeOverlay(){
+        document.getElementById('changeFavsForm').style.display = "none";
+    }
+
+    function SaveChanges(model){
+        var modelObj = JSON.parse(model);
+        document.getElementById('testContainer').innerHTML = modelObj.ID;
+
+        // Get the selected league from the league select element
+        var league = document.getElementById('leagueSelect').value;
+
+        // Access the corresponding field of the model based on the selected league
+        var team = document.getElementById(league + 'teamSelect').value;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/User/ChangeFavTeam", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        const data = {
+            ID: modelObj.ID,
+            League: league,
+            Team: team
+        };
+
+        const jsonData = JSON.stringify(data);
+        xhr.send(jsonData);
+
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    if (xhr.responseText == "Success") {
+                        // Update the logo based on the selected team
+                        var selectedTeam = modelObj[league + 'Teams'].find(function (item) {
+                            return item.Name === team;
+                        });
+                        var logoId = league + 'FavLogo';
+                        document.getElementById(logoId).src = selectedTeam.Url;
+                        document.getElementById('changeFavsForm').style.display = "none";
+                    } 
+                }
+            }
+        }
+    }
+</script>
+
+
 <div id="userSummary">
-    <h2>@Model.ID</h2>
+    <div>
+        <h2>@Model.ID</h2>
+        @if (Model.Change)
+        {
+            <a class="link" asp-area="" asp-controller="User" asp-action="EditProfile" asp-route-userName="@Model.ID">Edit Profile</a>
+        }     
+    </div>
     <h3>Games Attended: @Model.Count</h3>
     <h3>This Year: @Model.CountCurrent</h3>
 </div>
@@ -47,14 +220,92 @@
 <div id="userNavBar" class="navbar">
     <ul class="navbarUL">
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary">Diary</a>
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.ID" asp-route-league="MLB">Diary</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats">Stats</a>
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.ID" asp-route-league="MLB">Stats</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges">Stats</a>
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges" asp-route-userName="@Model.ID">Badges</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Followers" asp-route-userName="@Model.ID">Followers</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Following" asp-route-userName="@Model.ID">Following</a>
         </li>
     </ul>
 </div>
+
+<div class="favTeams" style="display: flex; justify-content: flex-start; align-items: center;">
+    <div class="favHeader" style="display: flex; flex-direction: column; align-items: flex-start; margin-right: 50px">
+        <h3>Favorite Teams</h3>    
+    </div>
+    
+    @if (Model.FavTeams.Values.All(team => team == null))
+    {
+        <a class="link" asp-area="" asp-controller="User" asp-action="EditProfile" asp-route-userName="@Model.ID">Add Favorites</a> 
+    }
+    else
+    {     
+        @foreach (var key in Model.FavTeams.Keys)
+        {
+            @if (Model.FavTeams[key] != null)
+            {
+                <div class="selectTeams" style="margin-right: 150px">
+                <h4>@key</h4>
+                <img id="MLBFavLogo" src="@Model.FavTeams[key].Url" alt="" style="width: 50px; height: 50px;" />
+
+            </div>
+            }
+
+        }   
+        
+    }
+
+</div>
+    
+
+@if (Model.SameGames != null && Model.SameGames.Any())
+{
+    <script>
+        var sameGames = @Html.Raw(Json.Serialize(Model.SameGames));
+    </script>
+    <div class="gamesContainer">
+        <div class="headerBar">
+            <h3>Common Games Attended: @Model.SameGames.Count()</h3>
+            <button id="seeAllButton" class="seeAllButton" onclick="seeAllGames()">See All</button>
+        </div>     
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Home Team</th>
+                    <th>Away Team</th>
+                    <th>Score</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody id="gamesBody">
+                @for (int i = 0; i < Model.SameGames.Count() && i < 5; i++)
+                {
+                    <tr>
+                        <td>@Model.SameGames[i].Date</td>
+                        <td>@Model.SameGames[i].Home</td>
+                        <td>@Model.SameGames[i].Away</td>
+                        <td><a href="@Url.Action("BoxScore", "Home", new { id = Model.SameGames[i].ID, league = Model.SameGames[i].League})">@Model.SameGames[i].Score</a></td>
+                        <td>@Model.SameGames[i].Location</td>
+                    </tr>
+                }
+
+            </tbody>
+        </table>
+    </div>
+    
+}
+
+
+
+
+
 

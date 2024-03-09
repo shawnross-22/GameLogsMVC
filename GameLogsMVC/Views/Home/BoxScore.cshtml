@@ -1,440 +1,488 @@
 ﻿@model GameLogsMVC.Models.GameData.GameEvent
-<style>
-    .summaryTeams {
-        display: flex;
-        gap: 20px;
-        margin: auto;
-        width: 50%;
-    }
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Box Score</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
 
-    .teamDetails {
-        border: 1px;
-        padding: 10px;
-        border-color: black;
-    }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
 
-    .summaryInfo {
-        border: 1px;
-        padding: 10px;
-        border-color: black;
-        margin: auto;
-        width: 50%;
-    }
-    .scoring {
-        margin: auto;
-        width: 50%;
-        padding: 10px;
-    }
+        .summaryTeams {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
 
-    .ScoringSummary, .TeamStats{
-        width: 50%;
-        padding: 10px;
-    }
+        .teamDetails {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
 
-    .BoxScore{
-        padding: 10px;
-    }
-    
+        .summaryInfo {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            text-align: center;
+        }
 
-    table {
-        border-collapse: collapse;
-        width: 100%;
-    }
+        .scoring {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
 
-    th, td {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 10px; /* Adjust this value to set the padding */
-    }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
 
-    th {
-        background-color: #f2f2f2;
-    }
-</style>
-<h3>Box Score</h3>
-<div class="summaryTeams">
-    <div class="teamDetails" id="awayDetails">
-        <div>@Model.Boxscore.Teams[0].Team.DisplayName</div>
-        <div>@Model.Header.Competitions[0].Competitors[1].Score</div>
-        <div>@Model.Header.Competitions[0].Competitors[1].Record[0].DisplayValue</div>
-    </div>
-    <div class="teamDetails" id="homeDetails">
-        <div>@Model.Boxscore.Teams[1].Team.DisplayName</div>
-        <div>@Model.Header.Competitions[0].Competitors[0].Score</div>
-        <div>@Model.Header.Competitions[0].Competitors[0].Record[0].DisplayValue</div>
-    </div>
-</div>
-<div class="summaryInfo">
-    <div>@DateTime.Parse(Model.Header.Competitions[0].Date).ToString("dddd, MMMM dd, yyyy")</div>
-    <div>Start Time: @DateTime.Parse(Model.Header.Competitions[0].Date).ToString("h:mm tt").ToLower() Local</div>
-    <div>Attendance: @Model.GameInfo.Attendance.ToString()</div>
-    @if (Model.Header.League.Abbreviation != "NCAAF")
-    {
-        <div>Venue: @Model.GameInfo.Venue.FullName</div>
-    } 
-    @if (Model.Header.League.Abbreviation == "MLB")
-    {
-        <div>Game Duration: @Model.GameInfo.GameDuration</div>
-    }   
-</div>
-<div class="scoring">
-    <table>
-        <thead>
-            <tr>
-                <th> </th>
-                @for (int i = 0; i < Model.Header.Competitions[0].Competitors[1].LineScores.Count(); i++)
-                {   
-                    @if(Model.Header.League.Abbreviation == "MLB")
-                    {
-                        <th>@(i + 1)</th>
-                    }
-                    else
-                    {
-                        if (i < 4)
-                        {
-                            <th>@(i + 1)</th>
-                        }
-                        else if (i == 4)
-                        {
-                            <th>OT</th>
-                        }
-                        else
-                        {
-                            <th>@(i + 1 -4)OT</th>
-                        }
-                    }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
 
-                }
-                @if (Model.Header.League.Abbreviation == "MLB")
-                {
-                    <th>R</th>
-                    <th>H</th>
-                    <th>E</th>
-                }
-                else
-                {
-                    <th>F</th>
-                }
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td>@Model.Boxscore.Teams[0].Team.DisplayName</td>
-                @foreach (var score in Model.Header.Competitions[0].Competitors[1].LineScores)
-                {
-                    <td>@score.DisplayValue</td>
-                }  
-                <td>@Model.Header.Competitions[0].Competitors[1].Score</td>
-                @if (Model.Header.League.Abbreviation == "MLB")
-                {
-                    <td>@Model.Header.Competitions[0].Competitors[1].Hits</td>
-                    <td>@Model.Header.Competitions[0].Competitors[1].Errors</td>
-                }              
-            </tr>
-            <tr>
-                <td>@Model.Boxscore.Teams[1].Team.DisplayName</td>
-                @foreach (var score in Model.Header.Competitions[0].Competitors[0].LineScores)
-                {
-                    <td>@score.DisplayValue</td>
-                }
-                @if (Model.Header.Competitions[0].Competitors[0].LineScores.Count() < Model.Header.Competitions[0].Competitors[1].LineScores.Count())
-                {
-                    <td>X</td>
-                }
-                <td>@Model.Header.Competitions[0].Competitors[0].Score</td>
-                @if (Model.Header.League.Abbreviation == "MLB")
-                {
-                    <td>@Model.Header.Competitions[0].Competitors[0].Hits</td>
-                    <td>@Model.Header.Competitions[0].Competitors[0].Errors</td>
-                }
-            </tr>
-        </tbody>
-    </table>
-</div>
+        th {
+            background-color: #f2f2f2;
+        }
 
-@if(Model.Header.League.Abbreviation == "NFL" || Model.Header.League.Abbreviation == "NCAAF")
-{
-    <div class="ScoringSummary" style="width: 50%;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Quarter</th>
-                    <th>Time</th>
-                    <th>Team</th>
-                    <th>Description</th>
-                    <th>@Model.Boxscore.Teams[0].Team.Abbreviation</th>
-                    <th>@Model.Boxscore.Teams[1].Team.Abbreviation</th>
-                </tr>
-            </thead>
-            <tbody>
-                @{
-                    int lastPeriodNumber = -1;
-                }
+        .ScoringSummary, .TeamStats {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
 
-                @foreach (var play in Model.ScoringPlays)
-                {
-                    <tr>
-                        @{
-                            if (play.Period.Number != lastPeriodNumber)
-                            {
-                                if(play.Period.Number > 4 && Model.Header.League.Abbreviation == "NCAAF")
-                                {
-                                    <td>@(play.Period.Number-4)OT</td>
-                                }
-                                else if (play.Period.Number > 4)
-                                {
-                                    <td>OT</td>
-                                }
-                                else
-                                {
-                                    <td>@play.Period.Number</td>
-                                }
-                                lastPeriodNumber = play.Period.Number;
-                            }
-                            else
-                            {
-                                <td></td>
-                            }
-                        }
-                        @if(play.Period.Number > 4 && Model.Header.League.Abbreviation == "NCAAF")
-                        {
-                            <td></td>
-                        }
-                        else
-                        {
-                            <td>@play.Clock.DisplayValue</td>
-                        }                       
-                        <td>@play.Team.Abbreviation</td>
-                        <td>@play.Text</td>
-                        <td>@play.AwayScore</td>
-                        <td>@play.HomeScore</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+        .BoxScore {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
 
-    <div class="TeamStats" style="width: 40%; height=10%;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Stat</th>
-                    <th>@Model.Boxscore.Teams[0].Team.Abbreviation</th>
-                    <th>@Model.Boxscore.Teams[1].Team.Abbreviation</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (int i = 0; i < Model.Boxscore.Teams[0].Statistics.Count(); i++)
-                {
-                    <tr>
-                        <td>@Model.Boxscore.Teams[0].Statistics[i].Label</td>
-                        <td>@Model.Boxscore.Teams[0].Statistics[i].DisplayValue</td>
-                        <td>@Model.Boxscore.Teams[1].Statistics[i].DisplayValue</td>
-                    </tr>
-
-                }
-            </tbody>
-        </table>
-    </div>
-}
-
-
-
-@foreach (var team in Model.Boxscore.Players)
-{
-    <h3>@team.Team.DisplayName</h3>
-    @foreach (var stat in team.Statistics)
-    {
-        <div class="BoxScore">           
+            .BoxScore table {
+                width: 100%;
+            }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h3>Box Score</h3>
+        <div class="summaryTeams">
+            <div class="teamDetails" id="awayDetails">
+                <div>@Model.Boxscore.Teams[0].Team.DisplayName</div>
+                <div>@Model.Header.Competitions[0].Competitors[1].Score</div>
+                <div>@Model.Header.Competitions[0].Competitors[1].Record[0].DisplayValue</div>
+            </div>
+            <div class="teamDetails" id="homeDetails">
+                <div>@Model.Boxscore.Teams[1].Team.DisplayName</div>
+                <div>@Model.Header.Competitions[0].Competitors[0].Score</div>
+                <div>@Model.Header.Competitions[0].Competitors[0].Record[0].DisplayValue</div>
+            </div>
+        </div>
+        <div class="summaryInfo">
+            <div>@DateTime.Parse(Model.Header.Competitions[0].Date).ToString("dddd, MMMM dd, yyyy")</div>
+            <div>Start Time: @DateTime.Parse(Model.Header.Competitions[0].Date).ToString("h:mm tt").ToLower() Local</div>
+            <div>Attendance: @Model.GameInfo.Attendance.ToString()</div>
+            @if (Model.GameInfo.Venue != null)
+            {
+                <div>Venue: @Model.GameInfo.Venue.FullName</div>
+            }
+            @if (Model.Header.League.Abbreviation == "MLB")
+            {
+                <div>Game Duration: @Model.GameInfo.GameDuration</div>
+            }
+        </div>
+        <div class="scoring">
             <table>
                 <thead>
                     <tr>
-                        @if (Model.Header.League.Abbreviation == "MLB")
+                        <th> </th>
+                        @for (int i = 0; i < Model.Header.Competitions[0].Competitors[1].LineScores.Count(); i++)
                         {
-                            <th>@stat.Type.ToUpper()</th>
-                        }
-                        else if (Model.Header.League.Abbreviation != "NBA")
-                        {
-                            <th>@stat.Name.ToUpper()</th>
-                        }
-                        else
-                        {
-                            <th>Starters</th>
-                        }
-                        @foreach (var label in stat.Labels)
-                        {
-                            @if(Model.Header.League.Abbreviation == "MLB" && stat.Labels.IndexOf(label) == 0 && stat.Type == "batting")
+                            @if (Model.Header.League.Abbreviation == "MLB")
                             {
-                                
+                                <th>@(i + 1)</th>
                             }
                             else
                             {
-                                <th>@label</th>
+                                @if (Model.Header.League.Abbreviation != "NCAAM")
+                                {
+                                    if (i < 4)
+                                    {
+                                        <th>@(i + 1)</th>
+                                    }
+                                    else if (i == 4)
+                                    {
+                                        <th>OT</th>
+                                    }
+                                    else
+                                    {
+                                        <th>@(i + 1 - 4)OT</th>
+                                    }
+                                }
+                                else
+                                {
+                                    if (i < 2)
+                                    {
+                                        <th>@(i + 1)</th>
+                                    }
+                                    else if (i == 2)
+                                    {
+                                        <th>OT</th>
+                                    }
+                                    else
+                                    {
+                                        <th>@(i + 1 - 2)OT</th>
+                                    }
+                                }
+                                
                             }
+                        }
+                        @if (Model.Header.League.Abbreviation == "MLB")
+                        {
+                            <th>R</th>
+                            <th>H</th>
+                            <th>E</th>
+                        }
+                        else
+                        {
+                            <th>F</th>
                         }
                     </tr>
                 </thead>
                 <tbody>
-                    @if(Model.Header.League.Abbreviation != "NBA")
-                    {
-                        @foreach (var athlete in stat.Athletes)
+                    <tr>
+                        <td>@Model.Boxscore.Teams[0].Team.DisplayName</td>
+                        @foreach (var score in Model.Header.Competitions[0].Competitors[1].LineScores)
                         {
-                            <tr>
-                                @if (Model.Header.League.Abbreviation == "MLB")
-                                {
-                                    @if (athlete.Positions != null)
-                                    {
-                                        @if (!athlete.Starter && stat.Type == "batting")
-                                        {
-                                            <td style="padding-left: 35px">@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
-                                        }
-                                        else
-                                        {
-                                            <td>@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
-                                        }
-
-                                    }
-                                    else
-                                    {
-                                        @if (!athlete.Starter && stat.Type == "batting")
-                                        {
-                                            <td style="padding-left: 35px">@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
-                                        }
-                                        else
-                                        {
-                                            <td>@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
-                                        }
-                                    }
-                                }
-                                @if (athlete.Athlete.DisplayName != " Team")
-                                {
-                                    @if(Model.Header.League.Abbreviation != "MLB")
-                                    {
-                                        <td>@athlete.Athlete.DisplayName</td>
-                                        @foreach (var item in athlete.Stats)
-                                        {
-                                            <td>@item</td>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        @foreach (var item in athlete.Stats)
-                                        {
-                                            @if(athlete.Stats.IndexOf(item) == 0 && stat.Type == "batting")
-                                            {
-                                                
-                                            }
-                                            else
-                                            {
-                                                <td>@item</td>
-                                            }
-                                        }
-                                    }
-
-                                }
-                            </tr>
-                            
+                            <td>@score.DisplayValue</td>
                         }
-                        @if(Model.Header.League.Abbreviation == "MLB")
+                        <td>@Model.Header.Competitions[0].Competitors[1].Score</td>
+                        @if (Model.Header.League.Abbreviation == "MLB")
                         {
-                            <tr>
-                                <th>Totals</th>
-                                @foreach (var label in stat.Labels)
-                                {
-                                    @if (stat.Labels.IndexOf(label) == 0 && stat.Type == "batting")
-                                    {
-
-                                    }
-                                    else
-                                    {
-                                        var playerIndex = Model.Boxscore.Players.IndexOf(team);
-                                        var statsIndex = team.Statistics.IndexOf(stat);
-                                        if (label == "#P")
-                                        {
-                                            <th>
-                                                @Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == "P").FirstOrDefault().DisplayValue
-                                            </th>
-                                        }
-                                        else if (label == "PC-ST")
-                                        {
-                                            <th>@Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == "PC").FirstOrDefault().DisplayValue-@Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s=>s.ShortDisplayName == "S").FirstOrDefault().DisplayValue</th>
-                                        }
-                                        else
-                                        {
-                                            <th>
-                                                @Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == label).FirstOrDefault().DisplayValue
-                                            </th>
-                                        }
-                                    }
-                                }
-                            </tr>
-                        }                    
-                    }
-                    else
-                    {
-                        for (int i = 0; i < 5; i++)
-                        {
-                            <tr>
-                                <td>@stat.Athletes[i].Athlete.DisplayName</td>
-                                @foreach (var item in stat.Athletes[i].Stats)
-                                {
-                                    <td>@item</td>
-                                }
-                            </tr>                           
+                            <td>@Model.Header.Competitions[0].Competitors[1].Hits</td>
+                            <td>@Model.Header.Competitions[0].Competitors[1].Errors</td>
                         }
-                        <tr>
-                            <th>Bench</th>
-                            @foreach (var label in stat.Labels)
-                            {
-                                <th>@label</th>
-                            }
-                        </tr>
-
-                        var sortedAthletes = stat.Athletes
-                        .Skip(5)
-                        .OrderByDescending(athlete =>
-                        athlete.Stats != null && athlete.Stats.Any()
-                        ? int.Parse(athlete.Stats[0])
-                        : 0)
-                        .ToList();
-                        @foreach (var athlete in sortedAthletes)
+                    </tr>
+                    <tr>
+                        <td>@Model.Boxscore.Teams[1].Team.DisplayName</td>
+                        @foreach (var score in Model.Header.Competitions[0].Competitors[0].LineScores)
                         {
-                            <tr>
-                                <td>@athlete.Athlete.DisplayName</td>
-                                @if (athlete.Stats.Count() != 0)
-                                {
-                                    @if (athlete.Stats[0] != "0")
-                                    {
-                                        @foreach (var item in athlete.Stats)
-                                        {
-                                            <td>@item</td>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <td style="text-align: center;" colspan="14">DNP</td>
-                                    }
-                                }
-                                else
-                                {
-                                    <td style="text-align: center;" colspan="14">DNP</td>
-                                }
-
-                            </tr>
+                            <td>@score.DisplayValue</td>
                         }
-                        <tr>
-                            <th>Totals</th>
-                            @foreach (var total in stat.Totals)
-                            {
-                                <th>@total</th>
-                            }
-                        </tr>
-                            
-                        
-                    }
+                        @if (Model.Header.Competitions[0].Competitors[0].LineScores.Count() < Model.Header.Competitions[0].Competitors[1].LineScores.Count())
+                        {
+                            <td>X</td>
+                        }
+                        <td>@Model.Header.Competitions[0].Competitors[0].Score</td>
+                        @if (Model.Header.League.Abbreviation == "MLB")
+                        {
+                            <td>@Model.Header.Competitions[0].Competitors[0].Hits</td>
+                            <td>@Model.Header.Competitions[0].Competitors[0].Errors</td>
+                        }
+                    </tr>
                 </tbody>
             </table>
         </div>
-    }
-}
 
+        @if (Model.Header.League.Abbreviation == "NFL" || Model.Header.League.Abbreviation == "NCAAF")
+        {
+            <div class="ScoringSummary">
+                <h3>Scoring Summary</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Quarter</th>
+                            <th>Time</th>
+                            <th>Team</th>
+                            <th>Description</th>
+                            <th>@Model.Boxscore.Teams[0].Team.Abbreviation</th>
+                            <th>@Model.Boxscore.Teams[1].Team.Abbreviation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int lastPeriodNumber = -1;
+                        }
+
+                        @foreach (var play in Model.ScoringPlays)
+                        {
+                            <tr>
+                                @{
+                                    if (play.Period.Number != lastPeriodNumber)
+                                    {
+                                        if (play.Period.Number > 4 && Model.Header.League.Abbreviation == "NCAAF")
+                                        {
+                                            <td>@(play.Period.Number - 4)OT</td>
+                                        }
+                                        else if (play.Period.Number > 4)
+                                        {
+                                            <td>OT</td>
+                                        }
+                                        else
+                                        {
+                                            <td>@play.Period.Number</td>
+                                        }
+                                        lastPeriodNumber = play.Period.Number;
+                                    }
+                                    else
+                                    {
+                                        <td></td>
+                                    }
+                                }
+                                @if (play.Period.Number > 4 && Model.Header.League.Abbreviation == "NCAAF")
+                                {
+                                    <td></td>
+                                }
+                                else
+                                {
+                                    <td>@play.Clock.DisplayValue</td>
+                                }
+                                <td>@play.Team.Abbreviation</td>
+                                <td>@play.Text</td>
+                                <td>@play.AwayScore</td>
+                                <td>@play.HomeScore</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="TeamStats">
+                <h3>Team Statistics</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Stat</th>
+                            <th>@Model.Boxscore.Teams[0].Team.Abbreviation</th>
+                            <th>@Model.Boxscore.Teams[1].Team.Abbreviation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (int i = 0; i < Model.Boxscore.Teams[0].Statistics.Count(); i++)
+                        {
+                            <tr>
+                                <td>@Model.Boxscore.Teams[0].Statistics[i].Label</td>
+                                <td>@Model.Boxscore.Teams[0].Statistics[i].DisplayValue</td>
+                                <td>@Model.Boxscore.Teams[1].Statistics[i].DisplayValue</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @foreach (var team in Model.Boxscore.Players)
+        {
+            <div class="BoxScore">
+                <h3>@team.Team.DisplayName</h3>
+                @foreach (var stat in team.Statistics)
+                {
+                    <table>
+                        <thead>
+                            <tr>
+                                @if (Model.Header.League.Abbreviation == "MLB")
+                                {
+                                    <th>@stat.Type.ToUpper()</th>
+                                }
+                                else if (Model.Header.League.Abbreviation != "NBA" && Model.Header.League.Abbreviation != "NCAAM")
+                                {
+                                    <th>@stat.Name.ToUpper()</th>
+                                }
+                                else
+                                {
+                                    <th>Starters</th>
+                                }
+                                @foreach (var label in stat.Labels)
+                                {
+                                    @if (Model.Header.League.Abbreviation == "MLB" && stat.Labels.IndexOf(label) == 0 && stat.Type == "batting")
+                                    {
+
+                                    }
+                                    else
+                                    {
+                                        <th>@label</th>
+                                    }
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Header.League.Abbreviation != "NBA" && Model.Header.League.Abbreviation != "NCAAM")
+                            {
+                                @foreach (var athlete in stat.Athletes)
+                                {
+                                    <tr>
+                                        @if (Model.Header.League.Abbreviation == "MLB")
+                                        {
+                                            @if (athlete.Positions != null)
+                                            {
+                                                @if (!athlete.Starter && stat.Type == "batting")
+                                                {
+                                                    <td style="padding-left: 35px">@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
+                                                }
+                                                else
+                                                {
+                                                    <td>@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                @if (!athlete.Starter && stat.Type == "batting")
+                                                {
+                                                    <td style="padding-left: 35px">@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
+                                                }
+                                                else
+                                                {
+                                                    <td>@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
+                                                }
+                                            }
+                                        }
+                                        @if (athlete.Athlete.DisplayName != " Team")
+                                        {
+                                            @if (Model.Header.League.Abbreviation != "MLB")
+                                            {
+                                                <td>@athlete.Athlete.DisplayName</td>
+                                                @foreach (var item in athlete.Stats)
+                                                {
+                                                    <td>@item</td>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                @foreach (var item in athlete.Stats)
+                                                {
+                                                    @if (athlete.Stats.IndexOf(item) == 0 && stat.Type == "batting")
+                                                    {
+
+                                                    }
+                                                    else
+                                                    {
+                                                        <td>@item</td>
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                    </tr>
+
+                                }
+                                @if (Model.Header.League.Abbreviation == "MLB")
+                                {
+                                    <tr>
+                                        <th>Totals</th>
+                                        @foreach (var label in stat.Labels)
+                                        {
+                                            @if (stat.Labels.IndexOf(label) == 0 && stat.Type == "batting")
+                                            {
+
+                                            }
+                                            else
+                                            {
+                                                var playerIndex = Model.Boxscore.Players.IndexOf(team);
+                                                var statsIndex = team.Statistics.IndexOf(stat);
+                                                if (label == "#P")
+                                                {
+                                                    <th>
+                                                        @Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == "P").FirstOrDefault().DisplayValue
+                                                    </th>
+                                                }
+                                                else if (label == "PC-ST")
+                                                {
+                                                    <th>@Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == "PC").FirstOrDefault().DisplayValue-@Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s=>s.ShortDisplayName == "S").FirstOrDefault().DisplayValue</th>
+                                                }
+                                                else
+                                                {
+                                                    <th>
+                                                        @Model.Boxscore.Teams[playerIndex].Statistics[statsIndex].Stats.Where(s => s.ShortDisplayName == label).FirstOrDefault().DisplayValue
+                                                    </th>
+                                                }
+                                            }
+                                        }
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                for (int i = 0; i < 5; i++)
+                                {
+                                    <tr>
+                                        <td>@stat.Athletes[i].Athlete.DisplayName</td>
+                                        @foreach (var item in stat.Athletes[i].Stats)
+                                        {
+                                            <td>@item</td>
+                                        }
+                                    </tr>
+                                }
+                                <tr>
+                                    <th>Bench</th>
+                                    @foreach (var label in stat.Labels)
+                                    {
+                                        <th>@label</th>
+                                    }
+                                </tr>
+
+                                var sortedAthletes = stat.Athletes
+                                .Skip(5)
+                                .OrderByDescending(athlete =>
+                                athlete.Stats != null && athlete.Stats.Any()
+                                ? int.Parse(athlete.Stats[0])
+                                : 0)
+                                .ToList();
+                                @foreach (var athlete in sortedAthletes)
+                                {
+                                    <tr>
+                                        <td>@athlete.Athlete.DisplayName</td>
+                                        @if (athlete.Stats.Count() != 0)
+                                        {
+                                            @if (athlete.Stats[0] != "0")
+                                            {
+                                                @foreach (var item in athlete.Stats)
+                                                {
+                                                    <td>@item</td>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <td style="text-align: center;" colspan="14">DNP</td>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <td style="text-align: center;" colspan="14">DNP</td>
+                                        }
+
+                                    </tr>
+                                }
+                                <tr>
+                                    <th>Totals</th>
+                                    @foreach (var total in stat.Totals)
+                                    {
+                                        <th>@total</th>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+            </div>
+        }
+    </div>
+</body>
+</html>

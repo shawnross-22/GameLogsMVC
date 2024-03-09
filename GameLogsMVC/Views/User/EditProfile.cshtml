@@ -1,0 +1,101 @@
+﻿@model GameLogsMVC.Models.ViewData.EditProfileView
+@using Newtonsoft.Json
+
+<h3>Account Settings</h3>
+<h4>Favorite Teams</h4>
+<div class="favSelect" id="MLBTeams" style="display: flex; align-items: center;">
+    <div>Favorite MLB Team: </div>
+    <select id="MLBteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.MLBTeams)', 'MLB')">
+        @foreach (var item in Model.MLBTeams)
+        {
+            <option value="@item.Name" selected="@(Model.FavTeams[0].Name == @item.Name)">@item.Name</option>
+        }
+        <option value="None" selected="@(Model.FavTeams[0].Name == null)">None</option>
+    </select>
+    <img id="MLBlogo" src="@Model.FavTeams[0].Url" alt="" style="@(Model.User.FavMLB != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")" />  
+</div>
+
+<div class="favSelect" id="NBATeams" style="display: flex; align-items: center;">
+    <div>Favorite NBA Team: </div>
+    <select id="NBAteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NBATeams)', 'NBA')">
+        @foreach (var item in Model.NBATeams)
+        {
+            <option value="@item.Name" selected="@(Model.FavTeams[1].Name == @item.Name)">@item.Name</option>
+        }
+        <option value="None" selected="@(Model.FavTeams[1].Name == null)">None</option>
+    </select>
+    <img id="NBAlogo" src="@Model.FavTeams[1].Url" alt="" style="@(Model.User.FavNBA != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")"  />
+</div>
+
+<div class="favSelect" id="NFLTeams" style="display: flex; align-items: center;">
+    <div>Favorite NFL Team: </div>
+    <select id="NFLteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NFLTeams)', 'NFL')">
+        @foreach (var item in Model.NFLTeams)
+        {
+            <option value="@item.Name" selected="@(Model.FavTeams[2].Name == @item.Name)">@item.Name</option>
+        }
+        <option value="None" selected="@(Model.FavTeams[2].Name == null)">None</option>
+    </select>
+    <img id="NFLlogo" src="@Model.FavTeams[2].Url" alt="" style="@(Model.User.FavNFL != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")"  />
+</div>
+
+<div class="favSelect" id="NCAAFTeams" style="display: flex; align-items: center;">
+    <div>Favorite NCAAF Team: </div>
+    <select id="NCAAFteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NCAAFTeams)', 'NCAAF')">
+        @foreach (var item in Model.NCAAFTeams)
+        {
+            <option value="@item.Name" selected="@(Model.FavTeams[3].Name == @item.Name)">@item.Name</option>
+        }
+        <option value="None" selected="@(Model.FavTeams[3].Name == null)">None</option>
+    </select>
+    <img id="NCAAFlogo" src="@Model.FavTeams[3].Url" alt="" style="@(Model.User.FavNCAAF != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")" />
+</div>
+
+<button type="button" id="saveButton" onclick="SaveChanges('@Model.User.ID')">Save</button>
+<div id="testContainer"></div>
+
+<script>
+    function ChangeTeam(team, teamsJson, league) {
+        var teams = JSON.parse(teamsJson);
+
+
+        // Find the team object in the array with the matching name
+        var selectedTeam = teams.find(function (item) {
+            return item.Name === team;
+        });
+
+        if (selectedTeam) {
+            var logoId = league + 'logo';
+            document.getElementById(logoId).src = selectedTeam.Url;
+            document.getElementById(logoId).style.display = 'block';
+        }
+    }
+
+    function SaveChanges(id) {
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/User/ChangeFavTeam", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+
+        const data = {
+            ID: id,
+            FavMLB: document.getElementById('MLBteamSelect').value,
+            FavNBA: document.getElementById('NBAteamSelect').value,
+            FavNFL: document.getElementById('NFLteamSelect').value,
+            FavNCAAF: document.getElementById('NCAAFteamSelect').value
+        };
+
+        const jsonData = JSON.stringify(data);
+        xhr.send(jsonData);
+        
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) {
+                if (xhr.status === 200) {
+                    if (xhr.responseText == "Success") {
+                    }
+                }
+            }
+        }
+    }
+</script>
+

@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using static System.Net.WebRequestMethods;
@@ -27,38 +28,55 @@ namespace GameLogsMVC.Controllers
             _dbContext = dbContext;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
 
             return View();
         }
 
-        public IActionResult MLB()
+        public async Task<IActionResult> MLB()
         {
-            string teamsUrl = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/teams";
-            TeamsView mlbView = GetTeams(teamsUrl, "MLB");
-            return View(mlbView);
+            TeamsView MLBView = new TeamsView();
+            MLBView.teams.AddRange(_dbContext.Team.Where(t => t.League == "MLB").ToList());
+            return View(MLBView);
         }
 
-        public IActionResult NCAAF()
+        public async Task<IActionResult> NCAAF()
         {
-            string teamsUrl = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/teams?limit=1000";
-            TeamsView ncaafView = GetTeams(teamsUrl, "NCAAF");           
-            return View(ncaafView);
+            TeamsView NCAAFView = new TeamsView();
+            NCAAFView.teams.AddRange(_dbContext.Team.Where(t => t.League == "NCAAF").OrderBy(t=>t.Name).ToList());
+            return View(NCAAFView);
         }
 
-        public IActionResult NFL()
+        public async Task<IActionResult> NFL()
         {
-            string teamsUrl = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/teams";
-            TeamsView nflView = GetTeams(teamsUrl, "NFL");
-            return View(nflView);
+            TeamsView NFLView = new TeamsView();
+            NFLView.teams.AddRange(_dbContext.Team.Where(t => t.League == "NFL").ToList());
+            return View(NFLView);
         }
 
-        public IActionResult NBA()
+        public async Task<IActionResult> NBA()
         {
-            string teamsUrl = "http://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams";
-            TeamsView nbaView = GetTeams(teamsUrl, "NBA");
-            return View(nbaView);
+            TeamsView NBAView = new TeamsView();
+            NBAView.teams.AddRange(_dbContext.Team.Where(t => t.League == "NBA").ToList());
+            return View(NBAView);
+        }
+
+        public async Task<IActionResult> NCAAB()
+        {
+            TeamsView NCAABView = new TeamsView();
+            NCAABView.teams.AddRange(_dbContext.Team.Where(t => t.League == "NCAAB").ToList());
+            return View(NCAABView);
+        }
+
+        public async Task<IActionResult> Users()
+        {
+            UsersView usersView = new UsersView();
+            usersView.users = _dbContext.User.ToList();
+            usersView.ID = Request.Cookies["userID"];
+            usersView.follows = _dbContext.UserFollow.Where(u => u.UserID == usersView.ID).Select(u => u.FollowingID).ToList();
+
+            return View(usersView);
         }
         public async Task<IActionResult> User()
         {
@@ -107,6 +125,9 @@ namespace GameLogsMVC.Controllers
                 case "NBA":
                     url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" + id;
                     break;
+                case "NCAAB":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=" + id;
+                    break;
             }
             using (var client = new HttpClient())
             {
@@ -120,19 +141,21 @@ namespace GameLogsMVC.Controllers
         public IActionResult Schedule(string league, string team, string id, string dates)
         {
             FullScheduleView fullScheduleView = new FullScheduleView();
-            ScheduleView regularSeasonSchedule = GetScheduleView(league, id, dates, team, "&seasontype=2");
+            team = team.Replace("amp;", "");
+            ScheduleView regularSeasonSchedule = GetScheduleView(league, id.Replace(league,""), dates, team, "&seasontype=2");
             fullScheduleView.regularSchedule = regularSeasonSchedule;
-            ScheduleView postSeasonSchedule = GetScheduleView(league, id, dates, team, "&seasontype=3");
+            ScheduleView postSeasonSchedule = GetScheduleView(league, id.Replace(league, ""), dates, team, "&seasontype=3");
             fullScheduleView.postSchedule = postSeasonSchedule;
             if(league == "NBA")
             {
-                ScheduleView playinSchedule = GetScheduleView(league, id, dates, team, "&seasontype=5");
+                ScheduleView playinSchedule = GetScheduleView(league, id.Replace(league, ""), dates, team, "&seasontype=5");
                 fullScheduleView.playInSchedule = playinSchedule;
             }
             fullScheduleView.League = league;
             fullScheduleView.Team = team;
+            fullScheduleView.Logo = _dbContext.Team.Where(t => t.Name == team).Select(t => t.Url).FirstOrDefault();
             fullScheduleView.Dates = dates;
-            fullScheduleView.ID = id;
+            fullScheduleView.ID = id.Replace(league, "");
             return View(fullScheduleView);              
         }
 
@@ -153,6 +176,9 @@ namespace GameLogsMVC.Controllers
                     break;
                 case "NBA":
                     scheduleUrl = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/teams/" + id + "/schedule?season=" + dates;
+                    break;
+                case "NCAAB":
+                    scheduleUrl = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/teams/" + id + "/schedule?season=" + dates;
                     break;
             }
             scheduleUrl = scheduleUrl + seasontype;
@@ -222,19 +248,43 @@ namespace GameLogsMVC.Controllers
                     }
                     string userId = Request.Cookies["userID"];
                     List<string> userGames = _dbContext.UserGame.Where(UserGame => UserGame.UserID == userId).Select(UserGame => UserGame.GameID).ToList();
-                    if (userGames.Contains(boxscore.ID))
+                    if (userId == null)
                     {
-                        result.attended = true;
+                        result.attended = null;
                     }
                     else
                     {
-                        result.attended = false;
+                        if (userGames.Contains(boxscore.ID))
+                        {
+                            result.attended = true;
+                        }
+                        else
+                        {
+                            result.attended = false;
+                        }
                     }
+                    
                     scheduleView.Results.Add(result);
                 }
             }
             return scheduleView;
         }
+
+        public async Task<IActionResult> SignUp([FromBody] User userID)
+        {
+            if (_dbContext.User.Any(u => u.ID == userID.ID))
+            {
+                return Ok("ID already exists.");
+            }
+            else
+            {
+                await _dbContext.User.AddAsync(userID);
+                await _dbContext.SaveChangesAsync();
+                Response.Cookies.Append("userID", userID.ID);
+                return Ok("Success.");
+            }
+        }
+
 
         public async Task<IActionResult> Login([FromBody] User userID)
         {
@@ -276,42 +326,153 @@ namespace GameLogsMVC.Controllers
         public async Task<IActionResult> Log([FromBody] Game game)
         {
             string userId = Request.Cookies["userID"];
+
+            GameEvent gameEvent = new GameEvent();
+            string url = "";
+            switch (game.League)
+            {
+                case "MLB":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=" + game.ID;
+                    break;
+                case "NCAAF":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=" + game.ID;
+                    break;
+                case "NFL":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=" + game.ID;
+                    break;
+                case "NBA":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" + game.ID;
+                    break;
+                case "NCAAB":
+                    url = "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/summary?event=" + game.ID;
+                    break;
+            }
+            using (var client = new HttpClient())
+            {
+                string gameResults = client.GetStringAsync(url).Result;
+
+                try
+                {
+                    // Your code
+                    gameEvent = JsonConvert.DeserializeObject<GameEvent>(gameResults);
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle the exception
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+
+                
+            }
+
             if (await _dbContext.Game.AnyAsync(g => g.ID == game.ID))
             {
                 if(!await _dbContext.UserGame.AnyAsync(g => g.GameID == game.ID && g.UserID == userId))
                 {
-                    UserGame userGame = new UserGame { GameID=game.ID, UserID=userId};
+                    UserGame userGame = new UserGame { GameID=game.ID, UserID=userId, League=game.League};
                     await _dbContext.UserGame.AddAsync(userGame);
+                    try
+                    {
+                        // Your code
+                        await _dbContext.SaveChangesAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log or handle the exception
+                        Console.WriteLine($"Error: {ex.Message}");
+                    }
                 }
             }
             else
             {
-                GameEvent gameEvent = new GameEvent();
-                string url = "";
-                switch (game.League)
+                if (gameEvent.GameInfo.Venue != null)
                 {
-                    case "MLB":
-                        url = "https://site.api.espn.com/apis/site/v2/sports/baseball/mlb/summary?event=" + game.ID;
-                        break;
-                    case "NCAAF":
-                        url = "https://site.api.espn.com/apis/site/v2/sports/football/college-football/summary?event=" + game.ID;
-                        break;
-                    case "NFL":
-                        url = "https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=" + game.ID;
-                        break;
-                    case "NBA":
-                        url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=" + game.ID;
-                        break;
+                    game.Location = gameEvent.GameInfo.Venue.FullName + ", " + gameEvent.GameInfo.Venue.Address.City + ", " + gameEvent.GameInfo.Venue.Address.State;
                 }
-                using (var client = new HttpClient())
+                else
                 {
-                    string gameResults = client.GetStringAsync(url).Result;
-
-                    gameEvent = JsonConvert.DeserializeObject<GameEvent>(gameResults);
+                    game.Location = "";
                 }
-                game.Location = gameEvent.GameInfo.Venue.FullName + ", " + gameEvent.GameInfo.Venue.Address.City + ", " + gameEvent.GameInfo.Venue.Address.State;
                 game.Home = gameEvent.Boxscore.Teams[1].Team.DisplayName;
                 game.Away = gameEvent.Boxscore.Teams[0].Team.DisplayName;
+                game.NeutralSite = gameEvent.Header.Competitions[0].NeutralSite.ToString();
+                if (!string.IsNullOrEmpty(gameEvent.Header.GameNote))
+                {
+                    game.GameNote = gameEvent.Header.GameNote;
+                }
+                else
+                {
+                    game.GameNote = "";
+                }
+                if(gameEvent.GameInfo.GameDuration != null)
+                {
+                    game.Duration = gameEvent.GameInfo.GameDuration;
+                }
+                else
+                {
+                    game.Duration = "";
+                }
+                Dictionary<string, double> plays = new Dictionary<string, double>();
+                if (gameEvent.WinProbability != null)
+                {
+                    foreach (var wpPlay in gameEvent.WinProbability)
+                    {
+                        for (int i = 1; i < gameEvent.WinProbability.Count(); i++)
+                        {
+                            if (!plays.ContainsKey(gameEvent.WinProbability[i].PlayID))
+                            {
+                                plays.Add(gameEvent.WinProbability[i].PlayID, Math.Abs(gameEvent.WinProbability[i].HomeWinPercentage - gameEvent.WinProbability[i - 1].HomeWinPercentage));
+
+                            }
+                            else
+                            {
+                                if (Math.Abs(gameEvent.WinProbability[i].HomeWinPercentage - gameEvent.WinProbability[i - 1].HomeWinPercentage) > plays[gameEvent.WinProbability[i].PlayID])
+                                {
+                                    plays[gameEvent.WinProbability[i].PlayID] = Math.Abs(gameEvent.WinProbability[i].HomeWinPercentage - gameEvent.WinProbability[i - 1].HomeWinPercentage);
+                                }
+                            }
+                        }
+
+                    }
+                    var sortedDictionary = plays.OrderByDescending(x => x.Value).ToDictionary(pair => pair.Key, pair => pair.Value);
+                    var firstKeyValuePair = sortedDictionary.FirstOrDefault();
+                    if (game.League != "NFL" && game.League != "NCAAF")
+                    {
+                        foreach (var play in gameEvent.Plays)
+                        {
+                            if (play.ID == firstKeyValuePair.Key)
+                            {
+                                if (game.League == "MLB")
+                                {
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + play.Period.Type + " " + play.Period.Number.ToString() + " " + play.Outs + " Out(s), " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                }
+                                else
+                                {
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", Q" + play.Period.Number.ToString() + " " + play.Clock.DisplayValue + ", " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                }
+                                
+                            }
+                        }
+                    }
+                    else
+                    {
+                        foreach (var drive in gameEvent.Drives.Previous)
+                        {
+                            foreach (var play in drive.Plays)
+                            {
+                                if (play.ID == firstKeyValuePair.Key)
+                                {
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", Q" + play.Period.Number.ToString() + " " + play.Clock.DisplayValue + ", " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                }
+                            }
+                        }
+                    }
+                    
+                }
+                else
+                {
+                    game.ImpactPlay = "";
+                }
                 if (gameEvent.Header.Competitions[0].Competitors[0].HomeAway == "home")
                 {
                     game.Score = gameEvent.Header.Competitions[0].Competitors[0].Score + "-" + gameEvent.Header.Competitions[0].Competitors[1].Score;
@@ -321,8 +482,84 @@ namespace GameLogsMVC.Controllers
                     game.Score = gameEvent.Header.Competitions[0].Competitors[1].Score + "-" + gameEvent.Header.Competitions[0].Competitors[0].Score;
                 }
                 await _dbContext.Game.AddAsync(game);
-                UserGame userGame = new UserGame { GameID = game.ID, UserID = userId };
+                try
+                {
+                    // Your code
+                    await _dbContext.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle the exception
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+                UserGame userGame = new UserGame { GameID = game.ID, UserID = userId, League = game.League };
                 await _dbContext.UserGame.AddAsync(userGame);
+                try
+                {
+                    // Your code
+                    await _dbContext.SaveChangesAsync();
+                }
+                catch (Exception ex)
+                {
+                    // Log or handle the exception
+                    Console.WriteLine($"Error: {ex.Message}");
+                }
+
+                foreach (var team in gameEvent.Boxscore.Players)
+                {
+                    foreach (var category in team.Statistics)
+                    {
+                        foreach(var athlete in category.Athletes)
+                        {
+                            if (!await _dbContext.Player.AnyAsync(p => p.ID == athlete.Athlete.ID))
+                            {
+                                Models.DBData.Player player = new Models.DBData.Player { ID = athlete.Athlete.ID, Name = athlete.Athlete.DisplayName };
+                                await _dbContext.Player.AddAsync(player);
+                                try
+                                {
+                                    // Your code
+                                    await _dbContext.SaveChangesAsync();
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log or handle the exception
+                                    Console.WriteLine($"Error: {ex.Message}");
+                                }
+                            }
+                            if (athlete.Athlete.ID[0] != '-')
+                            {
+                                PlayerGame pg = new PlayerGame { GameID = game.ID, PlayerID = athlete.Athlete.ID, Stats = string.Join(",", athlete.Stats), League = game.League, Team = team.Team.DisplayName };
+                                if (category.Type == null)
+                                {
+                                    if (category.Name != null)
+                                    {
+                                        pg.Position = category.Name;
+                                    }
+                                    else
+                                    {
+                                        pg.Position = "";
+                                    }
+                                }
+                                else
+                                {
+                                    pg.Position = category.Type;
+
+                                }
+                                await _dbContext.PlayerGame.AddAsync(pg);
+                                try
+                                {
+                                    // Your code
+                                    await _dbContext.SaveChangesAsync();
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log or handle the exception
+                                    Console.WriteLine($"Error: {ex.Message}");
+                                }
+                            }
+                        }
+                    }
+                }
             }
             await _dbContext.SaveChangesAsync();
             return Ok("Success");
@@ -338,45 +575,62 @@ namespace GameLogsMVC.Controllers
             return Ok("Success");
         }
 
-        public TeamsView GetTeams(string url, string view)
+        public async Task<IActionResult> Follow([FromBody] UserFollow userFollow)
         {
-            TeamsView teamsView = new TeamsView();
-            string[] lines = new string[] {};
-            if(view == "NCAAF")
-            {
-                string teamsFilePath = Path.Combine("Files", "NCAAFTeams.txt");
-                lines = System.IO.File.ReadAllLines(teamsFilePath);
-            }
-            Root root;
-            using (var client = new HttpClient())
-            {
-                string teamsResults = client.GetStringAsync(url).Result;
-
-                root = JsonConvert.DeserializeObject<Root>(teamsResults);
-            }
-
-            // Access the list of sports and extract team names
-            foreach (var sport in root.sports)
-            {
-                foreach (var league in sport.leagues)
-                {
-                    foreach (var team in league.teams)
-                    {
-                        if (view == "NCAAF")
-                        {
-                            if (lines.Contains(team.team.displayName))
-                            {
-                                teamsView.teams.Add(team);
-                            }
-                        }
-                        else
-                        {
-                            teamsView.teams.Add(team);
-                        }                       
-                    }
-                }
-            }
-            return teamsView;
+            _dbContext.UserFollow.Add(userFollow);
+            await _dbContext.SaveChangesAsync();
+            return Ok("Success");
         }
+
+        public async Task<IActionResult> Unfollow([FromBody] UserFollow userFollow)
+        {
+            UserFollow foundUserFollow = _dbContext.UserFollow.Where(uf => uf.UserID == userFollow.UserID && uf.FollowingID == userFollow.FollowingID).FirstOrDefault();
+            _dbContext.UserFollow.Remove(foundUserFollow);
+            await _dbContext.SaveChangesAsync();
+            return Ok("Success");
+        }
+
+
+        //public TeamsView GetTeams(string url, string view)
+        //{
+        //    TeamsView teamsView = new TeamsView();
+        //    string[] lines = new string[] {};
+        //    if(view == "NCAAF")
+        //    {
+        //        string teamsFilePath = Path.Combine("Files", "NCAAFTeams.txt");
+        //        lines = System.IO.File.ReadAllLines(teamsFilePath);
+        //    }
+        //    Root root;
+        //    using (var client = new HttpClient())
+        //    {
+        //        string teamsResults = client.GetStringAsync(url).Result;
+
+        //        root = JsonConvert.DeserializeObject<Root>(teamsResults);
+        //    }
+
+        //    // Access the list of sports and extract team names
+        //    foreach (var sport in root.sports)
+        //    {
+        //        foreach (var league in sport.leagues)
+        //        {
+        //            foreach (var team in league.teams)
+        //            {
+
+        //                if (view == "NCAAF")
+        //                {
+        //                    if (lines.Contains(team.team.displayName))
+        //                    {
+        //                        teamsView.teams.Add(team);
+        //                    }
+        //                }
+        //                else
+        //                {
+        //                    teamsView.teams.Add(team);
+        //                }                       
+        //            }
+        //        }
+        //    }
+        //    return teamsView;
+        //}
     }
 }

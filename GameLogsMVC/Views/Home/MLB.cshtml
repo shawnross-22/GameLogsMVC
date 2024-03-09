@@ -1,11 +1,18 @@
 ﻿@model GameLogsMVC.Models.ViewData.TeamsView
 
 <h2>MLB Teams</h2>
-<ul>
+<ul style="list-style: none;">
     @foreach (var team in Model.teams)
     {
-        <li>
-            <a href="@Url.Action("Schedule", "Home", new { league = "MLB", team = team.team.displayName, id = team.team.id, dates = "2023" })">@team.team.displayName</a><br />
+        <li style="margin-bottom: 10px;">
+            <div style="display: inline-block; vertical-align: top;">
+                <img src="@team.Url" alt="@team.Name Logo" style="width: 50px; height: 50px;" />
+            </div>
+            <div style="display: inline-block; margin-left: 5px;">
+                <span style="display: block;">@team.Name</span>
+                <a style="font-size: 12px" href="@Url.Action("Schedule", "Home", new { league = "MLB", team = team.Name, id = team.ID, dates = "2024" })">Schedule</a><br />
+            </div>
+            <br />
         </li>
     }
 </ul>

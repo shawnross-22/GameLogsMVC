@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using System.IO.Compression;
 using Microsoft.AspNetCore.ResponseCompression;
 using GameLogsMVC.Models.DBData;
+using GameLogsMVC.Models.ViewData;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddScoped<BadgeCheckerFactory>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

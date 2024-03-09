@@ -47,13 +47,55 @@
         .person-icon:hover .overlay {
             display: block;
         }
+
+        .signupOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+            display: none; /* Initially hidden */
+            justify-content: center;
+            align-items: center;
+            z-index: 999; /* Set a high z-index value */
+        }
+
+        .signupOverlay-content {
+            background-color: white;
+            padding: 20px;
+            padding-top: 30px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            position: relative; /* Set position relative for absolute positioning of the close button */
+        }
+
+        .signup-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+            .signup-form input,
+            .signup-form button {
+                margin-bottom: 10px;
+            }
+
+        .close-btn {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">GameLogsMVC</a>
+                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">CrowdChamp</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -61,19 +103,22 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="MLB">MLB</a>
+                            <a class="nav-link text-dark" href="/Home/MLB">MLB</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NCAAF">NCAAF</a>
+                            <a class="nav-link text-dark" href="/Home/NCAAF">NCAAF</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NFL">NFL</a>
+                            <a class="nav-link text-dark" href="/Home/NFL">NFL</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="NBA">NBA</a>
+                            <a class="nav-link text-dark" href="/Home/NBA">NBA</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                            <a class="nav-link text-dark" href="/Home/NCAAB">NCAAB</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" href="/Home/Users">Users</a>
                         </li>
                         <li id="loginIcon" class="nav-item person-icon" style="margin: auto; display: flex">
                             <i class="fas fa-user"></i>
@@ -82,12 +127,12 @@
                                     <input type="text" id="usernameInput" placeholder="Username" />
                                     <input type="password" id="passwordInput" placeholder="Password" />
                                     <button type="button" onclick="login()">Login</button>
-                                    <div id="messageContainer"></div>
+                                    <button type="button" onclick="showSignupOverlay()">Sign Up</button>
                                 </form>
                             </div>
                         </li>
                         <li id="userNav" class="nav-item" style="display: none">
-                            <a id="welcomeContainer" class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index"></a>
+                            <a id="welcomeContainer" class="nav-link text-dark"></a>
                         </li>
                     </ul>
                 </div>
@@ -98,6 +143,20 @@
         <main role="main" class="pb-3">
             @RenderBody()
         </main>
+    </div>
+
+    <div id="signupOverlay" class="signupOverlay">
+        <div class="signupOverlay-content">
+            <form id="signupForm">
+                <input type="text" id="signupUsernameInput" placeholder="Username" />
+                <input type="password" id="signupPasswordInput" placeholder="Password" />
+                <button type="button" onclick="signup()">Sign Up</button>
+                <div id="signUpContainer"></div>
+            </form>
+            <div>
+                <button type="button" class="close-btn" onclick="hideSignupOverlay()">X</button>
+            </div>       
+        </div>
     </div>
 
     <footer class="border-top footer text-muted">
@@ -116,7 +175,9 @@
     document.addEventListener("DOMContentLoaded", function () {
         // Check if the login cookie exists
         if(document.cookie != null){
-            document.getElementById("welcomeContainer").innerHTML = document.cookie.split(";")[0].split("=")[1].trim();
+            var username = document.cookie.split(";")[0].split("=")[1].trim();
+            document.getElementById("welcomeContainer").setAttribute("href", `/User/Index?userName=${username}`);
+            document.getElementById("welcomeContainer").innerHTML = username;
             document.getElementById("loginIcon").style.display = "none";
             document.getElementById("userNav").style.display = "flex";
         }       
@@ -142,6 +203,7 @@
                 if (xhr.status === 200) {
                     if(xhr.responseText == "Success."){
                         welcomeContainer.innerHTML = id;
+                        document.getElementById("welcomeContainer").setAttribute("href", `/User/Index?userName=${id}`);
                         document.getElementById("loginIcon").style.display = "none";
                         document.getElementById("userNav").style.display = "flex";
                     }
@@ -153,5 +215,49 @@
                 }
             }
         }
-    }   
+    } 
+    
+    function showSignupOverlay() {
+        document.getElementById("signupOverlay").style.display = "flex";
+    }
+
+    // Function to hide the overlay
+    function hideSignupOverlay() {
+        document.getElementById("signupOverlay").style.display = "none";
+    }
+
+    function signup(){
+        var message = document.getElementById("signUpContainer");
+        var id = document.getElementById("signupUsernameInput").value;
+        var password = document.getElementById("signupPasswordInput").value;
+        var signUpOverlay = document.getElementById("signUpOverlay");
+        var welcomeContainer = document.getElementById("welcomeContainer")
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/Home/SignUp", true);
+        xhr.setRequestHeader("Content-Type", "application/json");
+        const data = {
+            ID: id,
+            Password: password
+        };
+        const jsonData = JSON.stringify(data);
+        xhr.send(jsonData);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                if (xhr.status === 200) {
+                    if (xhr.responseText == "Success.") {
+                        welcomeContainer.innerHTML = id;
+                        document.getElementById("welcomeContainer").setAttribute("href", `/User/Index?userName=${id}`);
+                        document.getElementById("signupOverlay").style.display = "none";
+                        document.getElementById("loginIcon").style.display = "none";
+                        document.getElementById("userNav").style.display = "flex";
+                    }
+                    else {
+                        document.getElementById("usernameInput").value = "";
+                        document.getElementById("passwordInput").value = "";
+                        message.innerHTML = xhr.responseText;
+                    }
+                }
+            }
+        }
+    }
 </script>

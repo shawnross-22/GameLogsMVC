@@ -1,0 +1,264 @@
+﻿@model GameLogsMVC.Models.ViewData.StatsView
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Stats</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h3 {
+            margin-top: 20px;
+        }
+        #leagueSelect {
+            margin-bottom: 10px;
+        }
+
+        #userSummary {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: auto;
+            padding: 10px;
+        }
+
+            #userSummary h2,
+            #userSummary h3 {
+                margin: 0;
+            }
+
+        #userNavBar {
+            background-color: lightgray;
+            display: flex;
+            justify-content: space-around;
+            margin: auto;
+            padding: 10px;
+        }
+
+        .navbarUL {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+        }
+
+        .nav-item {
+            margin-right: 15px;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="userNavBar" class="navbar">
+        <ul class="navbarUL">
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.User">@Model.User</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.User" asp-route-league="MLB">Diary</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.User" asp-route-league="MLB">Stats</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Badges" asp-route-userName="@Model.User">Badges</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Followers" asp-route-userName="@Model.User">Followers</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Following" asp-route-userName="@Model.User">Following</a>
+            </li>
+        </ul>
+    </div>
+
+    <select id="leagueSelect" onchange="ChangeLeague(this.value)">
+        <option value="MLB" selected="@(Model.League == "MLB")">MLB</option>
+        <option value="NBA" selected="@(Model.League == "NBA")">NBA</option>
+        <option value="NCAAF" selected="@(Model.League == "NCAAF")">NCAAF</option>
+        <option value="NFL" selected="@(Model.League == "NFL")">NFL</option>
+        <option value="NCAAB" selected="@(Model.League == "NCAAB")">NCAAB</option>
+        <option value="Favorites" selected="@(Model.League == "Favorites")">Favorites</option>
+    </select>
+
+    @if(Model.Games != 0)
+    {
+            <div>Total Games Attended: @Model.Games</div>
+            <div>Total Teams Seen: @Model.TeamsSeen</div>
+            <div>Total Teams Visited: @Model.TeamsVisited</div>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="3">Most Seen Player</th>
+                    </tr>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Count</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var k in Model.Player.Keys)
+                    {
+                        <tr>
+                            <td>@(Model.Player.Keys.ToList().IndexOf(k) + 1)</td>
+                            <td>@k</td>
+                            <td>@Model.Player[k]</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            @if (Model.League == "MLB")
+            {
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="3">Most Seen Pitcher</th>
+                        </tr>
+                        <tr>
+                            <th>Rank</th>
+                            <th>Pitcher</th>
+                            <th>Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var k in Model.Pitcher.Keys)
+                        {
+                            <tr>
+                                <td>@(Model.Pitcher.Keys.ToList().IndexOf(k) + 1)</td>
+                                <td>@k</td>
+                                <td>@Model.Pitcher[k]</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div>Longest Game Attended: @Model.LongGame.FirstOrDefault().Key, @Model.LongGame.FirstOrDefault().Value</div>
+                <div>Shortest Game Attended: @Model.ShortGame.FirstOrDefault().Key, @Model.ShortGame.FirstOrDefault().Value</div>
+            }
+            <div>Highest Scoring Game Attended: @Model.HighScoring.FirstOrDefault().Key, @Model.HighScoring.FirstOrDefault().Value</div>
+            <div>Most Impactful Play: @Model.Play</div>
+
+            <h3>Single Game Stats</h3>
+            @if (Model.League == "MLB")
+            {
+                <div>Most Hits: @Model.Stats[0].FirstOrDefault().Key, @Model.Stats[0].FirstOrDefault().Value</div>
+                <div>Most Runs: @Model.Stats[1].FirstOrDefault().Key, @Model.Stats[1].FirstOrDefault().Value</div>
+                <div>Most Home Runs: @Model.Stats[2].FirstOrDefault().Key, @Model.Stats[2].FirstOrDefault().Value</div>
+                <div>Most RBIs: @Model.Stats[3].FirstOrDefault().Key, @Model.Stats[3].FirstOrDefault().Value</div>
+                <div>Most Innings Pitched: @Model.Stats[4].FirstOrDefault().Key, @Model.Stats[4].FirstOrDefault().Value</div>
+                <div>Most Strikeouts: @Model.Stats[5].FirstOrDefault().Key, @Model.Stats[5].FirstOrDefault().Value</div>
+            }
+            else if (Model.League == "NBA" || Model.League == "NCAAB")
+            {
+                <div>Most Points: @Model.Stats[0].FirstOrDefault().Key, @Model.Stats[0].FirstOrDefault().Value</div>
+                <div>Most Rebounds: @Model.Stats[1].FirstOrDefault().Key, @Model.Stats[1].FirstOrDefault().Value</div>
+                <div>Most Assists: @Model.Stats[2].FirstOrDefault().Key, @Model.Stats[2].FirstOrDefault().Value</div>
+                <div>Most Steals: @Model.Stats[3].FirstOrDefault().Key, @Model.Stats[3].FirstOrDefault().Value</div>
+                <div>Most Blocks: @Model.Stats[4].FirstOrDefault().Key, @Model.Stats[4].FirstOrDefault().Value</div>
+            }
+            else if (Model.League == "NFL" || Model.League == "NCAAF")
+            {
+                <div>Most Passing Yards: @Model.Stats[0].FirstOrDefault().Key, @Model.Stats[0].FirstOrDefault().Value</div>
+                <div>Most Rushing Yards: @Model.Stats[1].FirstOrDefault().Key, @Model.Stats[1].FirstOrDefault().Value</div>
+                <div>Longest Rush: @Model.Stats[2].FirstOrDefault().Key, @Model.Stats[2].FirstOrDefault().Value</div>
+                <div>Most Receiving Yards: @Model.Stats[3].FirstOrDefault().Key, @Model.Stats[3].FirstOrDefault().Value</div>
+                <div>Longest Reception: @Model.Stats[4].FirstOrDefault().Key, @Model.Stats[4].FirstOrDefault().Value</div>
+                <div>Longest FG: @Model.Stats[5].FirstOrDefault().Key, @Model.Stats[5].FirstOrDefault().Value</div>
+            }
+
+            <h3>Total Stats</h3>
+            @if (Model.League == "MLB")
+            {
+                <div>Most Hits: @Model.Stats[6].FirstOrDefault().Key, @Model.Stats[6].FirstOrDefault().Value</div>
+                <div>Most Runs: @Model.Stats[7].FirstOrDefault().Key, @Model.Stats[7].FirstOrDefault().Value</div>
+                <div>Most Home Runs: @Model.Stats[8].FirstOrDefault().Key, @Model.Stats[8].FirstOrDefault().Value</div>
+                <div>Most RBIs: @Model.Stats[9].FirstOrDefault().Key, @Model.Stats[9].FirstOrDefault().Value</div>
+                <div>Most Innings Pitched: @Model.Stats[10].FirstOrDefault().Key, @Model.Stats[10].FirstOrDefault().Value</div>
+                <div>Most Strikeouts: @Model.Stats[11].FirstOrDefault().Key, @Model.Stats[11].FirstOrDefault().Value</div>
+            }
+            else if (Model.League == "NBA" || Model.League == "NCAAB")
+            {
+                <div>Most Points: @Model.Stats[5].FirstOrDefault().Key, @Model.Stats[5].FirstOrDefault().Value</div>
+                <div>Most Rebounds: @Model.Stats[6].FirstOrDefault().Key, @Model.Stats[6].FirstOrDefault().Value</div>
+                <div>Most Assists: @Model.Stats[7].FirstOrDefault().Key, @Model.Stats[7].FirstOrDefault().Value</div>
+                <div>Most Steals: @Model.Stats[8].FirstOrDefault().Key, @Model.Stats[8].FirstOrDefault().Value</div>
+                <div>Most Blocks: @Model.Stats[9].FirstOrDefault().Key, @Model.Stats[9].FirstOrDefault().Value</div>
+            }
+            else if (Model.League == "NFL" || Model.League == "NCAAF")
+            {
+                <div>Most Passing Yards: @Model.Stats[6].FirstOrDefault().Key, @Model.Stats[6].FirstOrDefault().Value</div>
+                <div>Most Passing TDs: @Model.Stats[7].FirstOrDefault().Key, @Model.Stats[7].FirstOrDefault().Value</div>
+                <div>Most Rushing Yards: @Model.Stats[8].FirstOrDefault().Key, @Model.Stats[8].FirstOrDefault().Value</div>
+                <div>Most Rushing TDs: @Model.Stats[9].FirstOrDefault().Key, @Model.Stats[9].FirstOrDefault().Value</div>
+                <div>Most Receiving Yards: @Model.Stats[10].FirstOrDefault().Key, @Model.Stats[10].FirstOrDefault().Value</div>
+                <div>Most Receiving TDs: @Model.Stats[11].FirstOrDefault().Key, @Model.Stats[11].FirstOrDefault().Value</div>
+                <div>Most Interceptions: @Model.Stats[12].FirstOrDefault().Key, @Model.Stats[12].FirstOrDefault().Value</div>
+                <div>Most Tackles: @Model.Stats[13].FirstOrDefault().Key, @Model.Stats[13].FirstOrDefault().Value</div>
+                <div>Most Sacks: @Model.Stats[14].FirstOrDefault().Key, @Model.Stats[14].FirstOrDefault().Value</div>
+                <div>Most FG: @Model.Stats[15].FirstOrDefault().Key, @Model.Stats[15].FirstOrDefault().Value</div>
+            }
+    }    
+    else
+    {
+        @if(Model.League == "Favorites")
+        {
+            <h2>Favorite Team Total Games</h2>
+            @foreach (var teamDict in Model.FavsCount)
+            {
+                <div>
+                    @foreach (var kvp in teamDict)
+                    {
+                        <div>@kvp.Key: @kvp.Value</div>
+                    }
+                </div>
+            }
+            <h2>Favorite Team W-L Record</h2>
+            @foreach (var teamDict in Model.FavsRecord)
+            {
+                <div>
+                    @foreach (var kvp in teamDict)
+                    {
+                        <div>@kvp.Key: @kvp.Value</div>
+                    }
+                </div>
+            }
+
+        }
+        else
+        {
+            <div>No Games Attended</div>
+        }
+        
+    }
+
+
+<script>
+    function ChangeLeague(selectedLeague) {
+        var newUrl = "/User/Stats?userName=" + encodeURIComponent('@Model.User') + "&league=" + encodeURIComponent(selectedLeague);
+        window.location.href = newUrl;
+    }
+</script>
+
+</body>
+</html>

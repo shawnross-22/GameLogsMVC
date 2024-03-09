@@ -4,11 +4,15 @@ namespace GameLogsMVC.Models.ViewData
 {
     public class DiaryView
     {
-        public User User { get; set; }
-        public List<Game> MLBGames { get; set; }
-        public List<Game> NCAAFGames { get; set; }
-        public List<Game> NBAGames { get; set; }
-        public List<Game> NFLGames { get; set; }
+        public string User { get; set; }
+        public string League { get; set; }
+        public GameResult GameResult { get; set; }
 
+    }
+
+    public class GameResult
+    {
+        public List<Game> games { get; set; }
+        public List<bool>? attended { get; set; }
     }
 }

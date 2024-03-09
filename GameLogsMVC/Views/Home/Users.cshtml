@@ -1,0 +1,98 @@
+﻿@model GameLogsMVC.Models.ViewData.UsersView
+
+<style>
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .table th, .table td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .table th {
+            background-color: #f2f2f2;
+        }
+
+    .follow-label {
+        margin-left: 5px;
+        cursor: pointer;
+    }
+
+</style>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>User</th>
+            @if (Model.ID != null)
+            {
+                <th>Following</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var user in Model.users)
+        {
+            @if (user.ID != Model.ID)
+            {      
+                <tr>
+                    <td><a href="@Url.Action("Index", "User", new { userName = @user.ID})">@user.ID</a></td>
+                    @if (Model.ID != null)
+                    {
+                        <td>
+                            <input type="checkbox" id="myCheck_@user.ID" onclick="Follow('@Model.ID', '@user.ID', this)" @(Model.follows.Contains(user.ID) == true ? "checked" : "")>
+                        </td>
+                    }
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+
+<script>
+    var followContainer = document.getElementById("followContainer");
+    function Follow(id, follow, checkbox) {
+        if (checkbox.checked) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/Home/Follow", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            const data = {
+                UserID: id,
+                FollowingID: follow
+            };
+            const jsonData = JSON.stringify(data);
+            xhr.send(jsonData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                    if (xhr.status === 200) {
+                        if (xhr.responseText == "Success") {
+                        }
+                    }
+                }
+            }
+        }
+        else {
+            const xhr = new XMLHttpRequest();
+            xhr.open("POST", "/Home/Unfollow", true);
+            xhr.setRequestHeader("Content-Type", "application/json");
+            const data = {
+                UserID: id,
+                FollowingID: follow
+            };
+            const jsonData = JSON.stringify(data);
+            xhr.send(jsonData);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) { // 4 indicates that the request is complete
+                    if (xhr.status === 200) {
+                        if (xhr.responseText == "Success") {
+                        }
+                    }
+                }
+            }
+        }
+    }
+</script>

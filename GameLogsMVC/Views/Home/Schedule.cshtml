@@ -1,6 +1,35 @@
 ﻿@model GameLogsMVC.Models.ViewData.FullScheduleView
 
-<h2>Schedule</h2>
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0); /* Semi-transparent black overlay */
+        display: none; /* Initially hidden */
+    }
+</style>
+<div id="overlay"></div>
+
+<img src="@Model.Logo" alt="@Model.Team Logo" style="width: 75px; height: 75px;" />
+<div style="display: inline-block; margin-left: 5px;">
+    <h2 style="display: block;">@Model.Team</h2>
+</div>
+<h3>Schedule</h3>
+
 
 @*@if (Model.League == "MLB" || Model.League == "NBA")
 {
@@ -29,7 +58,7 @@
         
     </select>
 }*@
-@if(Model.League != "NBA")
+@if(Model.League == "NFL" || Model.League == "NCAAF")
 {
     <select id="yearSelect" onchange="ChangeYear(this.value)">
         @for (int year = 2023; year > 2002; year--)
@@ -37,6 +66,15 @@
             <option value="@year" selected="@(Model.Dates.Substring(0,4) == Convert.ToString(year))">@year</option>
         }
     </select>
+}
+else if (Model.League == "MLB")
+{
+        <select id="yearSelect" onchange="ChangeYear(this.value)">
+            @for (int year = 2024; year > 2002; year--)
+            {
+                <option value="@year" selected="@(Model.Dates.Substring(0,4) == Convert.ToString(year))">@year</option>
+            }
+        </select>
 }
 else
 {
@@ -58,42 +96,95 @@ else
 }
 
 
-<ul style="list-style-type:none; padding: 0;">
-    <h3>Regular Season</h3>
-    @foreach (var game in Model.regularSchedule.Results)
-    {
-        <li style="margin-bottom: 10px;">
-            <div style="display: inline-block; width: 100px;">@game.date</div>
-            <div style="display: inline-block; width: 250px;">@game.opponent</div>
-            <div style="display: inline-block; width: 100px;">@game.score</div>
-            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended ? "checked" : "")>           
-        </li>
-    }
+    
+<table>
+    <thead>
+        <tr>
+            <th colspan="4" style="background-color: lightgray">Regular Season</th>
+        </tr>
+        <tr>
+            <th>Date</th>
+            <th>Opponent</th>
+            <th>Score</th>
+            @if(Model.regularSchedule.Results[0].attended != null)
+            {
+                <th>Attended</th>
+            }         
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.regularSchedule.Results)
+        {
+            <tr>
+                <td>@game.date</td>
+                <td>@game.opponent</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
+                @if (game.attended != null)
+                {
+                    <td>
+                        @if (game.score != null)
+                        {
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                        }
+                    </td>
+                }              
+            </tr>
+        }
+    </tbody>
     @if(Model.League == "NBA")
     {
-        <h3>Play-In</h3>
-        @foreach (var game in Model.playInSchedule.Results)
-        {
-            <li style="margin-bottom: 10px;">
-                <div style="display: inline-block; width: 100px;">@game.date</div>
-                <div style="display: inline-block; width: 250px;">@game.opponent</div>
-                <div style="display: inline-block; width: 100px;">@game.score</div>
-                <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended ? "checked" : "")>
-            </li>
-        }
-    }  
-    <h3>Postseason</h3>
-    @foreach (var game in Model.postSchedule.Results)
-    {
-        <li style="margin-bottom: 10px;">
-            <div style="display: inline-block; width: 100px;">@game.date</div>
-            <div style="display: inline-block; width: 250px;">@game.opponent</div>
-            <div style="display: inline-block; width: 100px;">@game.score</div>
-            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended ? "checked" : "")>
-        </li>
+        <thead>
+            <tr>
+                <th colspan="4" style="background-color: lightgray">Play In</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var game in Model.playInSchedule.Results)
+            {
+                <tr>
+                    <td>@game.date</td>
+                    <td>@game.opponent</td>
+                    <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
+                    @if (game.attended != null)
+                    {
+                        <td>
+                            @if (game.score != null)
+                            {
+                                <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
     }
+    <thead>
+        <tr>
+            <th colspan="4" style="background-color: lightgray">Postseason</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var game in Model.postSchedule.Results)
+        {
+            <tr>
+                <td>@game.date</td>
+                <td>@game.opponent</td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
+                @if (game.attended != null)
+                {
+                    <td>
+                        @if (game.score != null)
+                        {
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
 
-</ul>
+    
+</table>
 
 <div id="dates"></div>
 
@@ -117,7 +208,7 @@ else
         else{
             dates = '@Model.Dates'.substring(0, 4) + selectedDates.substring(0, 5) + '@Model.Dates'.substring(9, 13) + selectedDates.substring(5);
         }      
-        var newUrl = "/Home/Schedule?league=" + encodeURIComponent('@Model.League') + "&team=" + encodeURIComponent('@Model.Team') + "&dates=" + encodeURIComponent(dates);
+        var newUrl = "/Home/Schedule?league=" + encodeURIComponent('@Model.League') + "&team=" + encodeURIComponent('@Html.Raw(Json.Serialize(Model.Team))') + "&dates=" + encodeURIComponent(dates);
         window.location.href = newUrl;
     }
 
@@ -127,6 +218,7 @@ else
     }
 
     function Log(id, date, checkbox){
+        //document.getElementById('overlay').style.display = 'block';
         if(checkbox.checked){
             datesContainer.innerHTML = date;
             const xhr = new XMLHttpRequest();
@@ -147,7 +239,8 @@ else
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) { // 4 indicates that the request is complete
                     if (xhr.status === 200) {
-                        if (xhr.responseText == "Success.") {
+                        if (xhr.responseText == "Success") {
+                            //document.getElementById('overlay').style.display = 'none';
                         }
                     }
                 }
@@ -166,7 +259,8 @@ else
             xhr.onreadystatechange = function () {
                 if (xhr.readyState === 4) { // 4 indicates that the request is complete
                     if (xhr.status === 200) {
-                        if (xhr.responseText == "Success.") {
+                        if (xhr.responseText == "Success") {
+                            document.getElementById('overlay').style.display = 'none';
                         }
                     }
                 }

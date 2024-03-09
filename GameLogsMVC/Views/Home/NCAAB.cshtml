@@ -1,6 +1,6 @@
 ﻿@model GameLogsMVC.Models.ViewData.TeamsView
 
-<h2>NFL Teams</h2>
+<h2>NCAAB Teams</h2>
 <ul style="list-style: none;">
     @foreach (var team in Model.teams)
     {
@@ -10,7 +10,7 @@
             </div>
             <div style="display: inline-block; margin-left: 5px;">
                 <span style="display: block;">@team.Name</span>
-                <a style="font-size: 12px" href="@Url.Action("Schedule", "Home", new { league = "NFL", team = team.Name, id = team.ID, dates = "2023" })">Schedule</a><br />
+                <a style="font-size: 12px"href="@Url.Action("Schedule", "Home", new { league = "NCAAB", team = team.Name, id = team.ID, dates = "2024" })">Schedule</a>
             </div>
             <br />
         </li>

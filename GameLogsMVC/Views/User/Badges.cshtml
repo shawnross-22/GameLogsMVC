@@ -1,0 +1,83 @@
+﻿@model GameLogsMVC.Models.ViewData.UserBadgeView
+
+<style>
+    #userSummary {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        margin: auto;
+        padding: 10px;
+    }
+
+        #userSummary h2,
+        #userSummary h3 {
+            margin: 0;
+        }
+
+    #userNavBar {
+        background-color: lightgray;
+        display: flex;
+        justify-content: space-around;
+        margin: auto;
+        padding: 10px;
+    }
+
+    .navbarUL {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+
+    .nav-item {
+        margin-right: 15px;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+    }
+</style>
+
+<div id="userNavBar" class="navbar">
+    <ul class="navbarUL">
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.UserID">@Model.UserID</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.UserID" asp-route-league="MLB">Diary</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.UserID" asp-route-league="MLB">Stats</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Badges" asp-route-userName="@Model.UserID">Badges</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Followers" asp-route-userName="@Model.UserID">Followers</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Following" asp-route-userName="@Model.UserID">Following</a>
+        </li>
+    </ul>
+</div>
+
+<table class="table table-striped table-bordered">
+    <thead class="thead-dark">
+        <tr>
+            <th>Badge</th>
+            <th>Description</th>
+            <th>Completion</th>
+        </tr>
+    </thead>
+    <tbody>
+        @for (int i = 0; i < Model.Badges.Count(); i++)
+        {
+            <tr>
+                <td> <a asp-area="" asp-controller="Badge" asp-action="Index" asp-route-userName="@Model.UserID" asp-route-badge="@Model.Badges[i].ID">@Model.Badges[i].Name</a> </td>
+                <td>@Model.Badges[i].Description</td>
+                <td style="color: @(Model.Completion[i] == 1.0 ? "green" : "inherit")">@string.Format("{0:P0}", Model.Completion[i])</td>
+            </tr>
+        }
+    </tbody>
+</table>

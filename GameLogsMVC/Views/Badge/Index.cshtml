@@ -1,0 +1,86 @@
+﻿@model GameLogsMVC.Models.ViewData.BadgesView
+
+<style>
+.badge-info {
+    background-color: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.progress-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.progress-table th, .progress-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+.progress-table th {
+    background-color: #f2f2f2;
+}
+
+.progress-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.progress-table tbody tr:hover {
+    background-color: #eaeaea;
+}
+
+</style>
+
+<div class="badge-info">
+    <h3>@Model.Badge.Name</h3>
+    <p>@Model.Badge.Description</p>
+    <p>Completion: @string.Format("{0:P0}", Model.Completion)</p>
+</div>
+
+@if(int.Parse(Model.Badge.ID) <= 3)
+{
+    <table class="progress-table">
+        <thead>
+            <tr>
+                <th>@Model.Progress[0][0]</th>
+                <th>@Model.Progress[0][2]</th>
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 1; i < Model.Progress.Count(); i++)
+            {
+                <tr>
+                    <td style="color: @(Model.Progress[i][1] == "True" ? "green" : "inherit")">@Model.Progress[i][0]</td>
+                    <td style="color: @(Model.Progress[i][1] == "True" ? "green" : "inherit")">@Model.Progress[i][2]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <table class="progress-table">
+        <thead>
+            <tr>
+                @foreach (var item in Model.Progress[0])
+                {
+                    <th>@item</th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 1; i < Model.Progress.Count(); i++)
+            {
+                <tr>
+                    @foreach (var item in Model.Progress[i])
+                    {
+                        <td>@item</td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
