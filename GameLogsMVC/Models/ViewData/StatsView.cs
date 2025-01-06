@@ -1,35 +1,40 @@
-﻿namespace GameLogsMVC.Models.ViewData
+﻿using GameLogsMVC.Models.DBData;
+namespace GameLogsMVC.Models.ViewData
 {
     public class StatsView
     {
+        public Stats StatsWatched { get; set; }
+        public Stats StatsAttended { get; set; }
         public string User { get; set; }
         public string League { get; set; }
-        public int Games { get; set; }
-        public int TeamsSeen { get; set; }
-        public int TeamsVisited { get; set; } 
-        public Dictionary<string, int> Stadium { get; set; }
-        public Dictionary<string, int> Player { get; set; }
-        public Dictionary<string, int> Pitcher { get; set; }
-        public List<Dictionary<string, string>> Stats { get; set; }
-        public Dictionary<string, string> LongGame { get; set; }
-        public Dictionary<string, string> ShortGame { get; set; }
-        public Dictionary<string, string> HighScoring { get; set; }
-        public string Play { get; set; }
-        public List<Dictionary<string, int>> FavsCount { get; set; }
-        public List<Dictionary<string, string>> FavsRecord { get; set; }
 
-        public StatsView()
+        public class Stats
         {
-            Stadium = new Dictionary<string, int>();
-            Player = new Dictionary<string, int>();
-            Pitcher = new Dictionary<string, int>();
-            Stats = new List<Dictionary<string, string>>();
-            LongGame = new Dictionary<string, string>();
-            ShortGame = new Dictionary<string, string>();
-            HighScoring = new Dictionary<string, string>();
-            FavsCount = new List<Dictionary<string, int>>();
-            FavsRecord = new List<Dictionary<string, string>>();
+            public int Games { get; set; }
+            public int TeamsSeen { get; set; }
+            public int TeamsVisited { get; set; }
+            public Dictionary<string, int> Stadium { get; set; }
+            public Dictionary<string, List<string>> Player { get; set; }
+            public Dictionary<string, List<string>> Pitcher { get; set; }
+            public List<Dictionary<List<string>, string>> SingleStats { get; set; }
+            public List<Dictionary<List<string>, string>> AccStats { get; set; }
+            public List<Game> GameStats { get; set; }
+            public List<Dictionary<string, List<string>>> FavsCount { get; set; }
+            public List<Dictionary<string, List<string>>> FavsRecord { get; set; }
+
+            public Stats()
+            {
+                Stadium = new Dictionary<string, int>();
+                Player = new Dictionary<string, List<string>>();
+                Pitcher = new Dictionary<string, List<string>>();
+                SingleStats = new List<Dictionary<List<string>, string>>();
+                AccStats = new List<Dictionary<List<string>, string>>();
+                GameStats = new List<Game>();
+                FavsCount = new List<Dictionary<string, List<string>>>();
+                FavsRecord = new List<Dictionary<string, List<string>>>();
+            }
         }
+        
 
     }
 }

@@ -14,5 +14,6 @@ namespace GameLogsMVC.Models.ViewData
     {
         public List<Game> games { get; set; }
         public List<bool>? attended { get; set; }
+        public List<bool>? watched { get; set; }
     }
 }

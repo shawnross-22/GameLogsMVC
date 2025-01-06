@@ -10,25 +10,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
     <style>
-        /* Your custom CSS goes here */
-        .person-icon {
-            position: absolute;
-            top: 50%; /* Adjust as needed */
-            right: 0;
-            transform: translateY(-50%); /* Vertically center the icon */
-            cursor: pointer;
-            padding-right: 15px;
-        }
-
-        #userNav{
-            position: absolute;
-            top: 50%; /* Adjust as needed */
-            right: 0;
-            transform: translateY(-50%); /* Vertically center the icon */
-            cursor: pointer;
-            padding-right: 15px;
-        }
-
         .person-icon i {
             cursor: pointer;
         }
@@ -120,7 +101,7 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" href="/Home/Users">Users</a>
                         </li>
-                        <li id="loginIcon" class="nav-item person-icon" style="margin: auto; display: flex">
+                        <li id="loginIcon" class="nav-item person-icon">
                             <i class="fas fa-user"></i>
                             <div class="overlay" id="loginContainer">
                                 <form id="loginForm">
@@ -237,7 +218,12 @@
         xhr.setRequestHeader("Content-Type", "application/json");
         const data = {
             ID: id,
-            Password: password
+            Password: password,
+            FavMLB: "None",
+            FavNBA: "None",
+            FavNFL: "None",
+            FavNCAAF: "None",
+            FavNCAAB: "None"
         };
         const jsonData = JSON.stringify(data);
         xhr.send(jsonData);

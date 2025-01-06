@@ -1,7 +1,76 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
-}
+﻿@model GameLogsMVC.Models.ViewData.HomeView
+<style>
+    table {
+        border-collapse: collapse;
+        width: 100%;
+    }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-</div>
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+
+    #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0); /* Semi-transparent black overlay */
+        display: none; /* Initially hidden */
+    }
+</style>
+
+<h3>Upcoming Games</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Favorite Team</th>
+            <th>Opponent</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var kvp in Model.FavGames)
+        {
+            <tr>
+                <td>@kvp.Value.date</td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = kvp.Value.league, teamID = kvp.Value.teamID})">@kvp.Key</td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = kvp.Value.league, teamID = kvp.Value.opponentID})">@kvp.Value.opponent</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h3>Following Activity</h3>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>User</th>
+            <th>Date</th>
+            <th>Home Team</th>
+            <th>Away Team</th>
+            <th>Score</th>
+            <th>Location</th>
+
+            <!-- Add more columns for other attributes as needed -->
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var kvp in Model.FollowingGames)
+        {
+            <tr>
+                <td>@kvp.Key</td>
+                <td>@kvp.Value.Date</td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = kvp.Value.League, teamID = kvp.Value.HomeTeamID.Replace(kvp.Value.League, "")})">@kvp.Value.Home</a></td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = kvp.Value.League, teamID = kvp.Value.AwayTeamID.Replace(kvp.Value.League, "")})">@kvp.Value.Away</a></td>
+                <td><a href="@Url.Action("BoxScore", "Home", new { id = kvp.Value.ID, league = kvp.Value.League})">@kvp.Value.Score</a></td>
+                <td>@kvp.Value.Location</td>
+                <!-- Add more cells for other attributes as needed -->
+            </tr>
+        }
+
+    </tbody>
+</table>

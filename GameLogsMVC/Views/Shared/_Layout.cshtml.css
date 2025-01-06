@@ -46,3 +46,33 @@ button.accept-policy {
   white-space: nowrap;
   line-height: 60px;
 }
+
+.person-icon {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+#userNav {
+    position: absolute;
+    top: 50%; /* Adjust as needed */
+    right: 0;
+    transform: translateY(-50%); /* Vertically center the icon */
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+/* Media query */
+@media (max-width: 768px) {
+    /* Media query styles */
+    #loginIcon, #userNav {
+        position: relative;
+        top: auto;
+        right: auto;
+        transform: none;
+        padding-right: 0;
+    }
+}

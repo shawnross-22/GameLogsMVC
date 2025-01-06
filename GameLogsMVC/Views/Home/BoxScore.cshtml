@@ -85,12 +85,12 @@
         <h3>Box Score</h3>
         <div class="summaryTeams">
             <div class="teamDetails" id="awayDetails">
-                <div>@Model.Boxscore.Teams[0].Team.DisplayName</div>
+                <img src="@Model.Boxscore.Teams[0].Team.Logo" style="width: 75px; height: 75px;" />
                 <div>@Model.Header.Competitions[0].Competitors[1].Score</div>
                 <div>@Model.Header.Competitions[0].Competitors[1].Record[0].DisplayValue</div>
             </div>
             <div class="teamDetails" id="homeDetails">
-                <div>@Model.Boxscore.Teams[1].Team.DisplayName</div>
+                <img src="@Model.Boxscore.Teams[1].Team.Logo" style="width: 75px; height: 75px;" />
                 <div>@Model.Header.Competitions[0].Competitors[0].Score</div>
                 <div>@Model.Header.Competitions[0].Competitors[0].Record[0].DisplayValue</div>
             </div>
@@ -168,7 +168,7 @@
                 </thead>
                 <tbody>
                     <tr>
-                        <td>@Model.Boxscore.Teams[0].Team.DisplayName</td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.Header.League.Abbreviation, teamID = @Model.Boxscore.Teams[0].Team.ID.Replace(Model.Header.League.Abbreviation, "")})">@Model.Boxscore.Teams[0].Team.DisplayName</a></td>
                         @foreach (var score in Model.Header.Competitions[0].Competitors[1].LineScores)
                         {
                             <td>@score.DisplayValue</td>
@@ -181,7 +181,7 @@
                         }
                     </tr>
                     <tr>
-                        <td>@Model.Boxscore.Teams[1].Team.DisplayName</td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.Header.League.Abbreviation, teamID = @Model.Boxscore.Teams[1].Team.ID.Replace(Model.Header.League.Abbreviation, "")})">@Model.Boxscore.Teams[1].Team.DisplayName</a></td>
                         @foreach (var score in Model.Header.Competitions[0].Competitors[0].LineScores)
                         {
                             <td>@score.DisplayValue</td>
@@ -334,11 +334,11 @@
                                             {
                                                 @if (!athlete.Starter && stat.Type == "batting")
                                                 {
-                                                    <td style="padding-left: 35px">@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
+                                                    <td style="padding-left: 35px"><a href="@Url.Action("Index", "Player", new { league = Model.Header.League.Abbreviation, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</a></td>
                                                 }
                                                 else
                                                 {
-                                                    <td>@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</td>
+                                                    <td><a href="@Url.Action("Index", "Player", new { league = Model.Header.League.Abbreviation, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName @string.Join("-", athlete.Positions.Select(p => p.Abbreviation))</a></td>
                                                 }
 
                                             }
@@ -346,11 +346,11 @@
                                             {
                                                 @if (!athlete.Starter && stat.Type == "batting")
                                                 {
-                                                    <td style="padding-left: 35px">@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
+                                                    <td style="padding-left: 35px"><a href="@Url.Action("Index", "Player", new { league = Model.Header.League.Abbreviation, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</a></td>
                                                 }
                                                 else
                                                 {
-                                                    <td>@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</td>
+                                                    <td><a href="@Url.Action("Index", "Player", new { league = Model.Header.League.Abbreviation, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName @athlete.Position.Abbreviation</a></td>
                                                 }
                                             }
                                         }
@@ -358,7 +358,7 @@
                                         {
                                             @if (Model.Header.League.Abbreviation != "MLB")
                                             {
-                                                <td>@athlete.Athlete.DisplayName</td>
+                                                <td><a href="@Url.Action("Index", "Player", new { league = Model.Header.League.Abbreviation, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName</a></td>
                                                 @foreach (var item in athlete.Stats)
                                                 {
                                                     <td>@item</td>
@@ -420,10 +420,15 @@
                             }
                             else
                             {
+                                string league = Model.Header.League.Abbreviation;
+                                @if (league == "NCAAM")
+                                {
+                                    league = "NCAAB";
+                                }
                                 for (int i = 0; i < 5; i++)
                                 {
                                     <tr>
-                                        <td>@stat.Athletes[i].Athlete.DisplayName</td>
+                                        <td><a href="@Url.Action("Index", "Player", new { league = league, playerID = stat.Athletes[i].Athlete.ID})">@stat.Athletes[i].Athlete.DisplayName</a></td>
                                         @foreach (var item in stat.Athletes[i].Stats)
                                         {
                                             <td>@item</td>
@@ -448,7 +453,7 @@
                                 @foreach (var athlete in sortedAthletes)
                                 {
                                     <tr>
-                                        <td>@athlete.Athlete.DisplayName</td>
+                                        <td><a href="@Url.Action("Index", "Player", new { league = league, playerID = athlete.Athlete.ID})">@athlete.Athlete.DisplayName</a></td>
                                         @if (athlete.Stats.Count() != 0)
                                         {
                                             @if (athlete.Stats[0] != "0")

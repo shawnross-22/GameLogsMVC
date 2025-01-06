@@ -11,8 +11,10 @@ namespace GameLogsMVC.Models.GameData
 
     public class Team
     {
+        public string ID { get; set; }
         public string DisplayName { get; set; }
         public string Abbreviation { get; set; }
+        public string Logo { get; set; }
     }
 
     public class GameInfo

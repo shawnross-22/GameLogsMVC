@@ -50,15 +50,38 @@
         margin: 0;
         padding: 0;
         display: flex;
+        max-width: 100%;
     }
 
     .nav-item {
-        margin-right: 15px;
+        display: inline-block;
+        margin-right: 2%;
+        max-width: 14.67%;
+        font-size: 15px;
     }
 
     .nav-link {
         text-decoration: none;
         color: #333;
+    }
+
+    @@media (max-width: 750px) {
+        .nav-item {
+            font-size: 6px;
+            text-align: left;
+        }
+
+        h2 {
+            font-size: 10px;
+        }
+
+        h3 {
+            font-size: 9px;
+        }
+
+        h4 {
+            font-size: 8px;
+        }
     }
 </style>
 
@@ -69,7 +92,7 @@
             <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.User">@Model.User</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.User" asp-route-league="MLB">Diary</a>
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Log" asp-route-userName="@Model.User" asp-route-league="MLB">Log</a>
         </li>
         <li class="nav-item">
             <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.User" asp-route-league="MLB">Stats</a>

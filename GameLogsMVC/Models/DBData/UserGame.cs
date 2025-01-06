@@ -11,5 +11,6 @@ namespace GameLogsMVC.Models.DBData
         public string UserID { get; set; }
         public string GameID { get; set; }
         public string League { get; set; }
+        public string Attended { get; set; }
     }
 }

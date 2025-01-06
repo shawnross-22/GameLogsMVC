@@ -48,15 +48,38 @@
         margin: 0;
         padding: 0;
         display: flex;
+        max-width: 100%;
     }
 
     .nav-item {
-        margin-right: 15px;
+        display: inline-block;
+        margin-right: 2%;
+        max-width: 14.67%;
+        font-size: 15px;
     }
 
     .nav-link {
         text-decoration: none;
         color: #333;
+    }
+
+    @@media (max-width: 750px) {
+        .nav-item {
+            font-size: 9px;
+            text-align: left;
+        }
+
+        h2 {
+            font-size: 11px;
+        }
+
+        h3 {
+            font-size: 10px;
+        }
+
+        h4, td, th {
+            font-size: 9px;
+        }
     }
 </style>
 
@@ -66,7 +89,7 @@
             <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Index" asp-route-userName="@Model.User">@Model.User</a>
         </li>
         <li class="nav-item">
-            <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.User" asp-route-league="MLB">Diary</a>
+            <a class="nav-link text-dark" style="text-decoration: underline;" asp-area="" asp-controller="User" asp-action="Log" asp-route-userName="@Model.User" asp-route-league="MLB">Log</a>
         </li>
         <li class="nav-item">
             <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.User" asp-route-league="MLB">Stats</a>
@@ -90,7 +113,9 @@
     <option value="NFL" selected="@(Model.League == "NFL")">NFL</option>
     <option value="NCAAB" selected="@(Model.League == "NCAAB")">NCAAB</option>
 </select>
-    <table border="1">
+
+<div style="overflow-x: auto;">
+    <table border="1" id="gameTable">
         <thead>
             <tr>
                 <th>Date</th>
@@ -100,7 +125,25 @@
                 <th>Location</th>
                 @if(Model.GameResult.attended != null)
                 {
-                    <th>Attended</th>
+                    <th>
+                        Attended
+                        <select id="attendedFilter" onchange="applyFilters()">
+                            <option value="All">All</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </th>
+                }
+                @if (Model.GameResult.watched != null)
+                {
+                    <th>
+                        Watched
+                        <select id="watchedFilter" onchange="applyFilters()">
+                            <option value="All">All</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </th>
                 }
             
                 <!-- Add more columns for other attributes as needed -->
@@ -111,32 +154,57 @@
             {
                 <tr>
                     <td>@Model.GameResult.games[i].Date</td>
-                    <td>@Model.GameResult.games[i].Home</td>
-                    <td>@Model.GameResult.games[i].Away</td>
+                    <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.GameResult.games[i].League, teamID = @Model.GameResult.games[i].HomeTeamID.Replace(Model.GameResult.games[i].League, "")})">@Model.GameResult.games[i].Home</a></td>
+                    <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.GameResult.games[i].League, teamID = @Model.GameResult.games[i].AwayTeamID.Replace(Model.GameResult.games[i].League, "")})">@Model.GameResult.games[i].Away</a></td>
                     <td><a href="@Url.Action("BoxScore", "Home", new { id = Model.GameResult.games[i].ID, league = Model.GameResult.games[i].League})">@Model.GameResult.games[i].Score</a></td>
                     <td>@Model.GameResult.games[i].Location</td>
-                @if(Model.GameResult.attended != null)
-                {
-                    <td><input type="checkbox" id="myCheck" onclick="Log(@Model.GameResult.games[i].ID, '@Model.GameResult.games[i].Date', this)" @(Model.GameResult.attended[i] == true ? "checked" : "")></td>
-                }
+                    @if (Model.GameResult.attended != null)
+                    {
+                        <td><input type="checkbox" class="attendedCheckbox" @(Model.GameResult.attended[i] == true ? "checked" : "")></td>
+                    }
+                    @if (Model.GameResult.watched != null)
+                    {
+                        <td><input type="checkbox" class="watchedCheckbox" @(Model.GameResult.watched[i] == true ? "checked" : "")></td>
+                    }
                     <!-- Add more cells for other attributes as needed -->
                 </tr>
             }
             
         </tbody>
     </table>
-
+</div>
 
 
 
 <script>
     function ChangeLeague(selectedLeague) {
-        var newUrl = "/User/Diary?userName=" + encodeURIComponent('@Model.User') + "&league=" + encodeURIComponent(selectedLeague);
+        var newUrl = "/User/Log?userName=" + encodeURIComponent('@Model.User') + "&league=" + encodeURIComponent(selectedLeague);
         window.location.href = newUrl;
     }
 
+    function applyFilters() {
+        const attendedFilter = document.getElementById('attendedFilter').value;
+        const watchedFilter = document.getElementById('watchedFilter').value;
 
-    function Log(id, date, checkbox) {
+        const rows = document.querySelectorAll('#gameTable tbody tr');
+
+        rows.forEach(row => {
+            const attendedCheckbox = row.querySelector('.attendedCheckbox');
+            const watchedCheckbox = row.querySelector('.watchedCheckbox');
+
+            const isAttended = attendedCheckbox && attendedCheckbox.checked;
+            const isWatched = watchedCheckbox && watchedCheckbox.checked;
+
+            // Determine if row should be visible based on filter criteria
+            const attendedMatch = (attendedFilter === "Yes" && isAttended) || (attendedFilter === "No" && !isAttended) || attendedFilter === "All";
+            const watchedMatch = (watchedFilter === "Yes" && isWatched) || (watchedFilter === "No" && !isWatched) || watchedFilter === "All";
+
+            row.style.display = attendedMatch && watchedMatch ? '' : 'none';
+        });
+    }
+
+
+    function Log(id, date, checkbox, attended) {
         @*document.getElementById('overlay').style.display = 'block';*@
         if (checkbox.checked) {
             const xhr = new XMLHttpRequest();
@@ -149,7 +217,10 @@
                 Date: String(date),
                 Score: "",
                 League: '@Model.League',
-                Location: ""
+                Location: "",
+                Season: attended,
+                HomeTeamID: "",
+                AwayTeamID: ""
             };
             const jsonData = JSON.stringify(data);
             xhr.send(jsonData);
@@ -169,7 +240,8 @@
             xhr.setRequestHeader("Content-Type", "application/json");
             const data = {
                 UserID: "",
-                GameID: String(id)
+                GameID: String(id),
+                Attended: attended
             };
             const jsonData = JSON.stringify(data);
             xhr.send(jsonData);

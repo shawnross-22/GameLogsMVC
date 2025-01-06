@@ -1,4 +1,5 @@
 ﻿using GameLogsMVC.Models.DBData;
+using GameLogsMVC.Models.GameData;
 using GameLogsMVC.Models.ViewData;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,9 +25,15 @@ namespace GameLogsMVC.Controllers
             badgeView.Badge = _dbContext.Badge.Where(b => b.ID == badge).FirstOrDefault();
             if (badgeChecker != null)
             {
-                var (progress, completion) = badgeChecker.CheckCompletion(userName, true);
+                var (progress, completion, gameID, index, league, homeIDs, awayIDs, playerIDs) = badgeChecker.CheckCompletion(userName, true);
                 badgeView.Completion = completion;
                 badgeView.Progress = progress;
+                badgeView.Index = index;
+                badgeView.GameIDs = gameID;
+                badgeView.League = league;
+                badgeView.HomeIDs = homeIDs;
+                badgeView.AwayIDs = awayIDs;
+                badgeView.PlayerIDs = playerIDs;
             }
             return View(badgeView);
         }

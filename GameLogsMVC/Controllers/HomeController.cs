@@ -6,6 +6,7 @@ using GameLogsMVC.Models.ViewData;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
 using System;
 using System.Diagnostics;
@@ -14,6 +15,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using static System.Net.WebRequestMethods;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace GameLogsMVC.Controllers
 {
@@ -30,8 +32,107 @@ namespace GameLogsMVC.Controllers
 
         public async Task<IActionResult> Index()
         {
-
-            return View();
+            string userID = Request.Cookies["userID"];
+            HomeView homeView = new HomeView();
+            Dictionary<string, string> favTeams = _dbContext.User.Where(u => u.ID == userID).Select(u => new Dictionary<string, string> { { "MLB", u.FavMLB }, { "NBA", u.FavNBA }, { "NFL", u.FavNFL }, { "NCAAF", u.FavNCAAF }, { "NCAAB", u.FavNCAAB } }).FirstOrDefault();
+            if (!favTeams.IsNullOrEmpty())
+            {
+                foreach (var key in favTeams.Keys)
+                {
+                    if (!string.IsNullOrEmpty(favTeams[key]))
+                    {
+                        homeView.FavTeams.Add(key, _dbContext.Team.FirstOrDefault(u => u.League == key && u.Name == favTeams[key]));
+                    }
+                    else
+                    {
+                        homeView.FavTeams.Add(key, null);
+                    }
+                }
+            }
+            foreach (var key in homeView.FavTeams.Keys)
+            {
+                if (homeView.FavTeams[key] != null)
+                {
+                    string dates = "2024";
+                    if (key == "NBA" || key == "NCAAB")
+                    {
+                        dates = "2025";
+                    }
+                    FullScheduleView fullScheduleView = new FullScheduleView();
+                    ScheduleView regularSeasonSchedule = GetScheduleView(key, homeView.FavTeams[key].ID.Replace(key, ""), dates, homeView.FavTeams[key].Name, "&seasontype=2");
+                    fullScheduleView.regularSchedule = regularSeasonSchedule;
+                    ScheduleView postSeasonSchedule = GetScheduleView(key, homeView.FavTeams[key].ID.Replace(key, ""), dates, homeView.FavTeams[key].Name, "&seasontype=3");
+                    fullScheduleView.postSchedule = postSeasonSchedule;
+                    if (key == "NBA")
+                    {
+                        ScheduleView playinSchedule = GetScheduleView(key, homeView.FavTeams[key].ID.Replace(key, ""), dates, homeView.FavTeams[key].Name, "&seasontype=5");
+                        fullScheduleView.playInSchedule = playinSchedule;
+                    }
+                    bool happened = true;
+                    foreach (var game in fullScheduleView.regularSchedule.Results)
+                    {
+                        if (game.score != null) 
+                        {
+                            happened = true;
+                        }
+                        else
+                        {
+                            happened = false;
+                            homeView.FavGames.Add(homeView.FavTeams[key].Name, game);
+                            break;
+                        }
+                    }
+                    if (happened && fullScheduleView.playInSchedule != null) 
+                    {
+                        foreach (var game in fullScheduleView.playInSchedule.Results)
+                        {
+                            if (game.score != null)
+                            {
+                                happened = true;
+                            }
+                            else
+                            {
+                                happened = false;
+                                homeView.FavGames.Add(homeView.FavTeams[key].Name, game);
+                                break;
+                            }
+                        }
+                    }
+                    if (happened && fullScheduleView.postSchedule != null)
+                    {
+                        foreach (var game in fullScheduleView.postSchedule.Results)
+                        {
+                            if (game.score != null)
+                            {
+                                happened = true;
+                            }
+                            else
+                            {
+                                happened = false;
+                                homeView.FavGames.Add(homeView.FavTeams[key].Name, game);
+                                break;
+                            }
+                        }
+                    }
+                }              
+            }
+            List<UserFollow> userFollows = new List<UserFollow>();
+            userFollows = _dbContext.UserFollow.Where(uf => uf.UserID == userID).ToList();
+            foreach (var user in userFollows)
+            {
+                homeView.FollowingGames.Add(user.FollowingID, _dbContext.UserGame
+                .Where(ug => ug.UserID == user.FollowingID)
+                .Join(_dbContext.Game,
+                      ug => ug.GameID,
+                      g => g.ID,
+                      (ug, g) => new { ug, g })
+                .OrderByDescending(joined => joined.g.Date)
+                .Select(joined => joined.g)
+                .FirstOrDefault());
+            }
+            homeView.FavGames = homeView.FavGames.OrderBy(kvp => kvp.Value.date).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            homeView.FollowingGames = homeView.FollowingGames.OrderByDescending(kvp => kvp.Value.Date).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+            return View(homeView);
         }
 
         public async Task<IActionResult> MLB()
@@ -194,6 +295,7 @@ namespace GameLogsMVC.Controllers
             foreach (var boxscore in boxscores.Events)
             {
                 Result result = new Result();
+                result.league = league;
                 result.id = boxscore.ID;
                 DateTime dateTime = DateTime.Parse(boxscore.Date, null, System.Globalization.DateTimeStyles.RoundtripKind);
 
@@ -211,6 +313,8 @@ namespace GameLogsMVC.Controllers
                         if (competition.Competitors[0].Team.DisplayName == team)
                         {
                             result.opponent = competition.Competitors[1].Team.DisplayName;
+                            result.teamID = competition.Competitors[0].Team.ID;
+                            result.opponentID = competition.Competitors[1].Team.ID;
                             if (competition.Competitors[0].Score != null)
                             {
                                 if (Convert.ToInt32(competition.Competitors[0].Score.DisplayValue) < Convert.ToInt32(competition.Competitors[1].Score.DisplayValue))
@@ -225,6 +329,8 @@ namespace GameLogsMVC.Controllers
                         }
                         else
                         {
+                            result.teamID = competition.Competitors[1].Team.ID;
+                            result.opponentID = competition.Competitors[0].Team.ID;
                             if (!competition.neutralSite)
                             {
                                 result.opponent = "@ " + competition.Competitors[0].Team.DisplayName;
@@ -247,20 +353,31 @@ namespace GameLogsMVC.Controllers
                         }
                     }
                     string userId = Request.Cookies["userID"];
-                    List<string> userGames = _dbContext.UserGame.Where(UserGame => UserGame.UserID == userId).Select(UserGame => UserGame.GameID).ToList();
+                    List<string> userGamesAttended = _dbContext.UserGame.Where(UserGame => UserGame.UserID == userId && UserGame.Attended == "A").Select(UserGame => UserGame.GameID).ToList();
+                    List<string> userGamesWatched = _dbContext.UserGame.Where(UserGame => UserGame.UserID == userId && UserGame.Attended == "W").Select(UserGame => UserGame.GameID).ToList();
                     if (userId == null)
                     {
                         result.attended = null;
+                        result.watched = null;
                     }
                     else
                     {
-                        if (userGames.Contains(boxscore.ID))
+                        if (userGamesAttended.Contains(boxscore.ID))
                         {
                             result.attended = true;
                         }
                         else
                         {
                             result.attended = false;
+                        }
+
+                        if (userGamesWatched.Contains(boxscore.ID))
+                        {
+                            result.watched = true;
+                        }
+                        else
+                        {
+                            result.watched = false;
                         }
                     }
                     
@@ -326,6 +443,7 @@ namespace GameLogsMVC.Controllers
         public async Task<IActionResult> Log([FromBody] Game game)
         {
             string userId = Request.Cookies["userID"];
+            string attended = game.Season;
 
             GameEvent gameEvent = new GameEvent();
             string url = "";
@@ -367,9 +485,9 @@ namespace GameLogsMVC.Controllers
 
             if (await _dbContext.Game.AnyAsync(g => g.ID == game.ID))
             {
-                if(!await _dbContext.UserGame.AnyAsync(g => g.GameID == game.ID && g.UserID == userId))
+                if(!await _dbContext.UserGame.AnyAsync(g => g.GameID == game.ID && g.UserID == userId && g.Attended == attended))
                 {
-                    UserGame userGame = new UserGame { GameID=game.ID, UserID=userId, League=game.League};
+                    UserGame userGame = new UserGame { GameID=game.ID, UserID=userId, League=game.League, Attended=attended};
                     await _dbContext.UserGame.AddAsync(userGame);
                     try
                     {
@@ -394,8 +512,41 @@ namespace GameLogsMVC.Controllers
                     game.Location = "";
                 }
                 game.Home = gameEvent.Boxscore.Teams[1].Team.DisplayName;
+                game.HomeTeamID = game.League + gameEvent.Boxscore.Teams[1].Team.ID;
                 game.Away = gameEvent.Boxscore.Teams[0].Team.DisplayName;
+                game.AwayTeamID = game.League + gameEvent.Boxscore.Teams[0].Team.ID;
                 game.NeutralSite = gameEvent.Header.Competitions[0].NeutralSite.ToString();
+                int year = int.Parse(game.Date.Substring(0, 4));
+                int month = int.Parse(game.Date.Substring(5, 2));
+
+                switch (game.League)
+                {
+                    case "MLB":
+                        game.Season = year.ToString();
+                        break;
+                    case "NBA":
+                    case "NCAAB":
+                        if (month >= 1 && month <= 7)
+                        {
+                            game.Season = year.ToString();
+                        }
+                        else
+                        {
+                            game.Season = (year + 1).ToString();
+                        }
+                        break;
+                    case "NFL":
+                    case "NCAAF":
+                        if (month >= 8 && month <= 12)
+                        {
+                            game.Season = year.ToString();
+                        }
+                        else
+                        {
+                            game.Season = (year - 1).ToString();
+                        }
+                        break;
+                }
                 if (!string.IsNullOrEmpty(gameEvent.Header.GameNote))
                 {
                     game.GameNote = gameEvent.Header.GameNote;
@@ -444,13 +595,18 @@ namespace GameLogsMVC.Controllers
                             {
                                 if (game.League == "MLB")
                                 {
-                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + play.Period.Type + " " + play.Period.Number.ToString() + " " + play.Outs + " Out(s), " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", " + play.Period.Type + " " + play.Period.Number.ToString() + ", " + play.Outs + " Out(s), " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                }
+                                else if (game.League == "NCAAB")
+                                {
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", " + ((play.Period.Number <= 2) ? (play.Period.Number.ToString() + "H") : ((play.Period.Number == 3) ? "" : ((play.Period.Number - 2).ToString())) + "OT") + " " + play.Clock.DisplayValue + ", " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
                                 }
                                 else
                                 {
-                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", Q" + play.Period.Number.ToString() + " " + play.Clock.DisplayValue + ", " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
+                                    game.ImpactPlay = DateTime.Parse(gameEvent.Header.Competitions[0].Date).ToString("yyyy-MM-dd") + " " + gameEvent.Boxscore.Teams[0].Team.DisplayName + " @ " + gameEvent.Boxscore.Teams[1].Team.DisplayName + " " + play.AwayScore.ToString() + "-" + play.HomeScore.ToString() + ", " + ((play.Period.Number <= 4) ? ("Q" + play.Period.Number.ToString()) : ((play.Period.Number == 5) ? "" : ((play.Period.Number - 4).ToString())) + "OT") + " " + play.Clock.DisplayValue + ", " + play.Text + ", " + string.Format("{0:P2}", firstKeyValuePair.Value);
                                 }
-                                
+
+
                             }
                         }
                     }
@@ -492,7 +648,7 @@ namespace GameLogsMVC.Controllers
                     // Log or handle the exception
                     Console.WriteLine($"Error: {ex.Message}");
                 }
-                UserGame userGame = new UserGame { GameID = game.ID, UserID = userId, League = game.League };
+                UserGame userGame = new UserGame { GameID = game.ID, UserID = userId, League = game.League, Attended = attended};
                 await _dbContext.UserGame.AddAsync(userGame);
                 try
                 {
@@ -513,7 +669,7 @@ namespace GameLogsMVC.Controllers
                         {
                             if (!await _dbContext.Player.AnyAsync(p => p.ID == athlete.Athlete.ID))
                             {
-                                Models.DBData.Player player = new Models.DBData.Player { ID = athlete.Athlete.ID, Name = athlete.Athlete.DisplayName };
+                                Models.DBData.Player player = new Models.DBData.Player { ID = athlete.Athlete.ID, Name = athlete.Athlete.DisplayName, HOF = "", League = game.League, MVP = "" };
                                 await _dbContext.Player.AddAsync(player);
                                 try
                                 {
@@ -569,7 +725,7 @@ namespace GameLogsMVC.Controllers
         {
             string userId = Request.Cookies["userID"];
             userGame.UserID = userId;
-            UserGame foundUserGame = _dbContext.UserGame.Where(ug => ug.GameID == userGame.GameID && ug.UserID == userId).FirstOrDefault();
+            UserGame foundUserGame = _dbContext.UserGame.Where(ug => ug.GameID == userGame.GameID && ug.UserID == userId && ug.Attended == userGame.Attended).FirstOrDefault();
             _dbContext.UserGame.Remove(foundUserGame);
             await _dbContext.SaveChangesAsync();
             return Ok("Success");

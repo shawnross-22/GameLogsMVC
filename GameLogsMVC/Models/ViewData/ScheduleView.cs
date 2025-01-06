@@ -28,6 +28,10 @@
         public string date { get; set; }
         public string opponent { get; set; }
         public string score { get; set; }
+        public string teamID { get; set; }
+        public string opponentID { get; set; }
+        public string league { get; set; }
         public bool? attended { get; set; }
+        public bool? watched { get; set; }
     }
 }

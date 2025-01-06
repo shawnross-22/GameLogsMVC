@@ -1,0 +1,23 @@
+﻿body {
+
+}
+
+.person-icon {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+/* Media query */
+@media (max-width: 768px) {
+    /* Media query styles */
+    .person-icon {
+        position: static;
+        transform: none;
+        padding-right: 0;
+        margin-left: auto;
+    }
+}

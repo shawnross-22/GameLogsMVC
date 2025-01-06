@@ -1,0 +1,794 @@
+﻿@model GameLogsMVC.Models.ViewData.PlayerView
+
+<style>
+    .player-info {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        width: 100%;
+        max-width: 350px; /* Limit max-width for a card look */
+        display: flex; /* Flexbox for layout */
+        align-items: center; /* Center items vertically */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add a slight shadow */
+    }
+
+        .player-info img {
+            border-radius: 5px; /* Rounded corners for the image */
+            margin-right: 15px; /* Space between image and text */
+        }
+
+    .player-details {
+        display: flex;
+        flex-direction: column; /* Stack text items vertically */
+    }
+
+        .player-details h3 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .player-details p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+    .viewed-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: auto; /* Adjust width based on content */
+    }
+
+        .viewed-table th, .viewed-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .viewed-table th {
+            background-color: #f2f2f2;
+        }
+
+        .viewed-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .viewed-table tbody tr:hover {
+            background-color: #eaeaea;
+        }
+
+</style>
+
+<div class="player-info">
+    @if (Model.Player.Athlete.Headshot != null)
+    {
+        <img src="@Model.Player.Athlete.Headshot.Href" alt="@Model.Player.Athlete.FullName" style="width: 175px; height: 127px;" />
+    }
+    <div class="player-details">
+        <h3>@Model.Player.Athlete.FullName</h3>
+        <p>@Model.Player.Athlete.Position.Abbreviation</p>
+        <p>@Model.Player.Athlete.Team.DisplayName</p>
+        <p>Jersey: @Model.Player.Athlete.Jersey</p>
+    </div>
+</div>
+
+@{
+    int columnCount = 3; // Starting with 3 fixed columns: Date, Team, Opponent
+    List<string> positions = new List<string>();
+    Dictionary<string, int> orderWatched = new Dictionary<string, int>();
+    Dictionary<string, int> orderAttended = new Dictionary<string, int>();
+    if (Model.League == "MLB")
+    {
+        positions.AddRange(new List<string> { "pitching", "batting"});
+    }
+    else if (Model.League == "NBA" || Model.League == "NCAAB")
+    {
+        columnCount += 13;
+        if (Model.League == "NBA")
+        {
+            columnCount += 1;
+        }
+    }
+    else if (Model.League == "NFL" || Model.League == "NCAAF")
+    {
+        switch (Model.Player.Athlete.Position.Abbreviation)
+        {
+            case "QB":
+                positions.AddRange(new List<string> { "passing", "rushing", "fumbles", "receiving", "kickReturns", "puntReturns", "defensive", "kicking", "punting", "interceptions" });
+                break;
+            case "RB":
+                positions.AddRange(new List<string> { "rushing", "receiving", "fumbles", "kickReturns", "puntReturns", "passing", "defensive", "kicking", "punting", "interceptions" });
+                break;
+            case "WR":
+            case "TE":
+                positions.AddRange(new List<string> { "receiving", "rushing", "fumbles", "kickReturns", "puntReturns", "passing", "defensive", "kicking", "punting", "interceptions" });
+                break;
+            case "OL":
+            case "LS":
+                positions.AddRange(new List<string> { "passing", "receiving", "rushing", "fumbles", "kickReturns", "puntReturns", "defensive", "kicking", "punting", "interceptions" });
+                break;
+            case "DE":
+            case "DL":
+            case "DT":
+            case "LB":
+            case "DB":
+            case "CB":
+            case "S":
+                positions.AddRange(new List<string> { "defensive", "interceptions", "fumbles", "passing", "rushing", "receiving", "kickReturns", "puntReturns", "kicking", "punting" });
+                break;
+            case "PK":
+                positions.AddRange(new List<string> { "kicking", "punting", "passing", "receiving", "rushing", "fumbles", "defensive", "kickReturns", "puntReturns", "interceptions" });
+                break;
+            case "P":
+                positions.AddRange(new List<string> { "punting", "kicking", "passing", "receiving", "rushing", "fumbles", "defensive", "kickReturns", "puntReturns", "interceptions" });
+                break;
+        }
+    }
+}
+
+<select id="viewSelect" onchange="ChangeView(this.value)">
+    <option value="Watched">Watched</option>
+    <option value="Attended">Attended</option>
+</select>
+
+<div id="PlayerWatched" style="display: block">
+    <table class="viewed-table" style="overflow-x: auto;">
+        <thead>
+            @if (Model.League == "NFL" || Model.League == "NCAAF")
+            {
+                <tr>
+                    <th colspan="3"></th>
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoWatched.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "passing":
+                                    <th colspan="4">@pos.ToUpper()</th>
+                                    orderWatched.Add(pos, 4);
+                                    break;
+                                case "receiving":
+                                case "rushing":
+                                case "fumbles":
+                                case "kickReturns":
+                                case "puntReturns":
+                                case "interceptions":
+                                    <th colspan="3">@pos.ToUpper()</th>
+                                    orderWatched.Add(pos, 3);
+                                    break;
+                                case "kicking":
+                                case "punting":
+                                    <th colspan="2">@pos.ToUpper()</th>
+                                    orderWatched.Add(pos, 2);
+                                    break;
+                                case "defensive":
+                                    <th colspan="7">@pos.ToUpper()</th>
+                                    orderWatched.Add(pos, 7);
+                                    break;
+                            }
+                        }
+                    }
+                </tr>
+            }
+            else if (Model.League == "MLB")
+            {
+                <tr>
+                    <th colspan="3"></th>
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoWatched.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            <th colspan="8">@pos.ToUpper()</th>
+                            orderWatched.Add(pos, 8);
+                        }
+                    }
+                </tr>
+            }
+            <tr>
+                <th>Date</th>
+                <th>Team</th>
+                <th>Opponent</th>
+                @if (Model.League == "MLB" && Model.PlayerViewInfoWatched.PlayerGames.Count() != 0)
+                {
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoWatched.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "pitching":
+                                    <th>IP</th>
+                                    <th>H</th>
+                                    <th>R</th>
+                                    <th>ER</th>
+                                    <th>BB</th>
+                                    <th>K</th>
+                                    <th>HR</th>
+                                    <th>PC-ST</th>
+                                    columnCount += 8;
+                                    break;
+                                case "batting":
+                                    <th>AB</th>
+                                    <th>R</th>
+                                    <th>H</th>
+                                    <th>RBI</th>
+                                    <th>HR</th>
+                                    <th>BB</th>
+                                    <th>K</th>
+                                    <th>#P</th>
+                                    columnCount += 8;
+                                    break;
+                            }
+                        }
+                    }
+                }
+                else if (Model.League == "NBA" || Model.League == "NCAAB")
+                {
+                    <th>MIN</th>
+                    <th>FG</th>
+                    <th>3PT</th>
+                    <th>FT</th>
+                    <th>OREB</th>
+                    <th>DREB</th>
+                    <th>REB</th>
+                    <th>AST</th>
+                    <th>STL</th>
+                    <th>BLK</th>
+                    <th>TO</th>
+                    <th>PF</th>
+                    @if (Model.League == "NBA")
+                    {
+                        <th>+/-</th>
+                    }
+                    <th>PTS</th>
+                }
+                else if (Model.League == "NCAAF" || Model.League == "NFL")
+                {
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoWatched.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "passing":
+                                    <th>C/ATT</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    <th>INT</th>
+                                    columnCount += 4;
+                                    break;
+                                case "rushing":
+                                    <th>CAR</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "receiving":
+                                    <th>REC</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "fumbles":
+                                    <th>FUM</th>
+                                    <th>LOST</th>
+                                    <th>REC</th>
+                                    columnCount += 3;
+                                    break;
+                                case "defensive":
+                                    <th>TOT</th>
+                                    <th>SOLO</th>
+                                    <th>SACKS</th>
+                                    <th>TFL</th>
+                                    <th>PD</th>
+                                    <th>QB HITS</th>
+                                    <th>TD</th>
+                                    columnCount += 7;
+                                    break;
+                                case "interceptions":
+                                    <th>INT</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "kickReturns":
+                                case "puntReturns":
+                                    <th>NO</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "kicking":
+                                    <th>FG</th>
+                                    <th>XP</th>
+                                    columnCount += 2;
+                                    break;
+                                case "punting":
+                                    <th>NO</th>
+                                    <th>YDS</th>
+                                    columnCount += 2;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.PlayerViewInfoWatched.Games.Keys.ToList().Count(); i++)
+            {
+                <tr>
+                    <td><a href="@Url.Action("BoxScore", "Home", new { id = @Model.PlayerViewInfoWatched.Games.Values.ToList()[i][0].GameID, league = @Model.League})">@Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Date.ToString()</a></td>
+                    @if (Model.PlayerViewInfoWatched.Games.Values.ToList()[i][0].Team == Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Home)
+                    {
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].HomeTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Home</a></td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].AwayTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Away</a></td>
+                    }
+                    else
+                    {
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].AwayTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Away</a></td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].HomeTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoWatched.Games.Keys.ToList()[i].Home</a></td>
+                    }
+                    @if (Model.League == "MLB")
+                    {
+                        int columnShown = 0;
+                        foreach (var pos in orderWatched.Keys.ToList())
+                        {
+                            @if (Model.PlayerViewInfoWatched.Games.Values.ToList()[i].Any(pg => pg.Position == pos))
+                            {
+                                int index = Model.PlayerViewInfoWatched.Games.Values.ToList()[i].FindIndex(pg => pg.Position == pos);
+                                List<int> js = new List<int>();
+                                switch (pos)
+                                {
+                                    case "pitching":
+                                        js.AddRange(new List<int> { 0, 1, 2, 3, 4, 5, 6, 7 });
+                                        break;
+                                    case "batting":
+                                        js.AddRange(new List<int> { 1, 2, 3, 4, 5, 6, 7, 8 });
+                                        break;
+                                }
+                                foreach (var j in js)
+                                {
+                                    <td>@Model.PlayerViewInfoWatched.Games.Values.ToList()[i][index].Stats.Split(',').ToList()[j]</td>
+                                    columnShown += 1;
+                                }
+                            }
+                            else
+                            {
+                                for (int j = 0; j < orderWatched[pos]; j++)
+                                {
+                                    {
+                                        <td>0</td>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (Model.League == "NBA" || Model.League == "NCAAB")
+                    {
+                        @for (int j = 0; j < Model.PlayerViewInfoWatched.PlayerGames[i].Stats.Split(',').ToList().Count(); j++)
+                        {
+                            @if (Model.PlayerViewInfoWatched.PlayerGames[i].Stats == "")
+                            {
+                                <td colspan="Model.PlayerViewInfoWatched.PlayerGames[i].Stats.Split(',').ToList().Count()" style="text-align:center">DNP</td>
+                            }
+                            else
+                            {
+                                <td>@Model.PlayerViewInfoWatched.PlayerGames[i].Stats.Split(',').ToList()[j]</td>
+                            }
+
+                        }
+                    }
+                    else if (Model.League == "NFL" || Model.League == "NCAAF")
+                    {
+                        int columnShown = 0;
+                        foreach (var pos in orderWatched.Keys.ToList())
+                        {
+                            @if (Model.PlayerViewInfoWatched.Games.Values.ToList()[i].Any(pg => pg.Position == pos))
+                            {
+                                int index = Model.PlayerViewInfoWatched.Games.Values.ToList()[i].FindIndex(pg => pg.Position == pos);
+                                List<int> js = new List<int>();
+                                switch (pos)
+                                {
+                                    case "passing":
+                                        js.AddRange(new List<int> { 0, 1, 3, 4 });
+                                        break;
+                                    case "rushing":
+                                    case "receiving":
+                                        js.AddRange(new List<int> { 0, 1, 3 });
+                                        break;
+                                    case "fumbles":
+                                    case "interceptions":
+                                        js.AddRange(new List<int> { 0, 1, 2 });
+                                        break;
+                                    case "defensive":
+                                        js.AddRange(new List<int> { 0, 1, 2, 3, 4, 5, 6 });
+                                        break;
+                                    case "kickReturns":
+                                    case "puntReturns":
+                                        js.AddRange(new List<int> { 0, 1, 4 });
+                                        break;
+                                    case "kicking":
+                                        js.AddRange(new List<int> { 0, 3 });
+                                        break;
+                                    case "punting":
+                                        js.AddRange(new List<int> { 0, 1 });
+                                        break;
+                                }
+                                foreach (var j in js)
+                                {
+                                    <td>@Model.PlayerViewInfoWatched.Games.Values.ToList()[i][index].Stats.Split(',').ToList()[j]</td>
+                                    columnShown += 1;
+                                }
+                            }
+                            else
+                            {
+                                for (int j = 0; j < orderWatched[pos]; j++)
+                                {
+                                    {
+                                        <td>0</td>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                </tr>
+            }
+            <tr>
+                @if (Model.PlayerViewInfoWatched.PlayerGames.Count != 0)
+                {
+                    <th colspan="3">Totals</th>
+                    @foreach (var sum in Model.PlayerViewInfoWatched.Sums)
+                    {
+                        <th>@sum</th>
+                    }
+                }
+                else
+                {
+                    <td colspan=@columnCount style="text-align: center">No Games Attended</td>
+                }
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div id="PlayerAttended" style="display: none">
+    <table class="viewed-table" style="overflow-x: auto;">
+        <thead>
+            @if (Model.League == "NFL" || Model.League == "NCAAF")
+            {
+                <tr>
+                    <th colspan="3"></th>
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoAttended.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "passing":
+                                    <th colspan="4">@pos.ToUpper()</th>
+                                    orderAttended.Add(pos, 4);
+                                    break;
+                                case "receiving":
+                                case "rushing":
+                                case "fumbles":
+                                case "kickReturns":
+                                case "puntReturns":
+                                case "interceptions":
+                                    <th colspan="3">@pos.ToUpper()</th>
+                                    orderAttended.Add(pos, 3);
+                                    break;
+                                case "kicking":
+                                case "punting":
+                                    <th colspan="2">@pos.ToUpper()</th>
+                                    orderAttended.Add(pos, 2);
+                                    break;
+                                case "defensive":
+                                    <th colspan="7">@pos.ToUpper()</th>
+                                    orderAttended.Add(pos, 7);
+                                    break;
+                            }
+                        }
+                    }
+                </tr>
+            }
+            else if (Model.League == "MLB")
+            {
+                <tr>
+                    <th colspan="3"></th>
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoAttended.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            <th colspan="8">@pos.ToUpper()</th>
+                            orderAttended.Add(pos, 8);
+                        }
+                    }
+                </tr>
+            }
+            <tr>
+                <th>Date</th>
+                <th>Team</th>
+                <th>Opponent</th>
+                @if (Model.League == "MLB" && Model.PlayerViewInfoAttended.PlayerGames.Count() != 0)
+                {
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoAttended.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "pitching":
+                                    <th>IP</th>
+                                    <th>H</th>
+                                    <th>R</th>
+                                    <th>ER</th>
+                                    <th>BB</th>
+                                    <th>K</th>
+                                    <th>HR</th>
+                                    <th>PC-ST</th>
+                                    columnCount += 8;
+                                    break;
+                                case "batting":
+                                    <th>AB</th>
+                                    <th>R</th>
+                                    <th>H</th>
+                                    <th>RBI</th>
+                                    <th>HR</th>
+                                    <th>BB</th>
+                                    <th>K</th>
+                                    <th>#P</th>
+                                    columnCount += 8;
+                                    break;
+                            }
+                        }
+                    }
+                }
+                else if (Model.League == "NBA" || Model.League == "NCAAB")
+                {
+                    <th>MIN</th>
+                    <th>FG</th>
+                    <th>3PT</th>
+                    <th>FT</th>
+                    <th>OREB</th>
+                    <th>DREB</th>
+                    <th>REB</th>
+                    <th>AST</th>
+                    <th>STL</th>
+                    <th>BLK</th>
+                    <th>TO</th>
+                    <th>PF</th>
+                    @if (Model.League == "NBA")
+                    {
+                        <th>+/-</th>
+                    }
+                    <th>PTS</th>
+                }
+                else if (Model.League == "NCAAF" || Model.League == "NFL")
+                {
+                    @foreach (var pos in positions)
+                    {
+                        @if (Model.PlayerViewInfoAttended.PlayerGames.Any(pg => pg.Position == pos))
+                        {
+                            switch (pos)
+                            {
+                                case "passing":
+                                    <th>C/ATT</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    <th>INT</th>
+                                    columnCount += 4;
+                                    break;
+                                case "rushing":
+                                    <th>CAR</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "receiving":
+                                    <th>REC</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "fumbles":
+                                    <th>FUM</th>
+                                    <th>LOST</th>
+                                    <th>REC</th>
+                                    columnCount += 3;
+                                    break;
+                                case "defensive":
+                                    <th>TOT</th>
+                                    <th>SOLO</th>
+                                    <th>SACKS</th>
+                                    <th>TFL</th>
+                                    <th>PD</th>
+                                    <th>QB HITS</th>
+                                    <th>TD</th>
+                                    columnCount += 7;
+                                    break;
+                                case "interceptions":
+                                    <th>INT</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "kickReturns":
+                                case "puntReturns":
+                                    <th>NO</th>
+                                    <th>YDS</th>
+                                    <th>TD</th>
+                                    columnCount += 3;
+                                    break;
+                                case "kicking":
+                                    <th>FG</th>
+                                    <th>XP</th>
+                                    columnCount += 2;
+                                    break;
+                                case "punting":
+                                    <th>NO</th>
+                                    <th>YDS</th>
+                                    columnCount += 2;
+                                    break;
+                            }
+                        }
+                    }
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @for (int i = 0; i < Model.PlayerViewInfoAttended.Games.Keys.ToList().Count(); i++)
+            {
+                <tr>
+                    <td><a href="@Url.Action("BoxScore", "Home", new { id = @Model.PlayerViewInfoAttended.Games.Values.ToList()[i][0].GameID, league = @Model.League})">@Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Date.ToString()</a></td>
+                    @if (Model.PlayerViewInfoAttended.Games.Values.ToList()[i][0].Team == Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Home)
+                    {
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].HomeTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Home</a></td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].AwayTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Away</a></td>
+                    }
+                    else
+                    {
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].AwayTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Away</a></td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.League, teamID = @Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].HomeTeamID.Replace(Model.League, "")})">@Model.PlayerViewInfoAttended.Games.Keys.ToList()[i].Home</a></td>
+                    }
+                    @if (Model.League == "MLB")
+                    {
+                        int columnShown = 0;
+                        foreach (var pos in orderAttended.Keys.ToList())
+                        {
+                            @if (Model.PlayerViewInfoAttended.Games.Values.ToList()[i].Any(pg => pg.Position == pos))
+                            {
+                                int index = Model.PlayerViewInfoAttended.Games.Values.ToList()[i].FindIndex(pg => pg.Position == pos);
+                                List<int> js = new List<int>();
+                                switch (pos)
+                                {
+                                    case "pitching":
+                                        js.AddRange(new List<int> { 0, 1, 2, 3, 4, 5, 6, 7 });
+                                        break;
+                                    case "batting":
+                                        js.AddRange(new List<int> { 1, 2, 3, 4, 5, 6, 7, 8 });
+                                        break;
+                                }
+                                foreach (var j in js)
+                                {
+                                    <td>@Model.PlayerViewInfoAttended.Games.Values.ToList()[i][index].Stats.Split(',').ToList()[j]</td>
+                                    columnShown += 1;
+                                }
+                            }
+                            else
+                            {
+                                for (int j = 0; j < orderAttended[pos]; j++)
+                                {
+                                    {
+                                        <td>0</td>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (Model.League == "NBA" || Model.League == "NCAAB")
+                    {
+                        @for (int j = 0; j < Model.PlayerViewInfoAttended.PlayerGames[i].Stats.Split(',').ToList().Count(); j++)
+                        {
+                            @if (Model.PlayerViewInfoAttended.PlayerGames[i].Stats == "")
+                            {
+                                <td colspan="Model.PlayerViewInfoAttended.PlayerGames[i].Stats.Split(',').ToList().Count()" style="text-align:center">DNP</td>
+                            }
+                            else
+                            {
+                                <td>@Model.PlayerViewInfoAttended.PlayerGames[i].Stats.Split(',').ToList()[j]</td>
+                            }
+
+                        }
+                    }
+                    else if (Model.League == "NFL" || Model.League == "NCAAF")
+                    {
+                        int columnShown = 0;
+                        foreach (var pos in orderAttended.Keys.ToList())
+                        {
+                            @if (Model.PlayerViewInfoAttended.Games.Values.ToList()[i].Any(pg => pg.Position == pos))
+                            {
+                                int index = Model.PlayerViewInfoAttended.Games.Values.ToList()[i].FindIndex(pg => pg.Position == pos);
+                                List<int> js = new List<int>();
+                                switch (pos)
+                                {
+                                    case "passing":
+                                        js.AddRange(new List<int> { 0, 1, 3, 4 });
+                                        break;
+                                    case "rushing":
+                                    case "receiving":
+                                        js.AddRange(new List<int> { 0, 1, 3 });
+                                        break;
+                                    case "fumbles":
+                                    case "interceptions":
+                                        js.AddRange(new List<int> { 0, 1, 2 });
+                                        break;
+                                    case "defensive":
+                                        js.AddRange(new List<int> { 0, 1, 2, 3, 4, 5, 6 });
+                                        break;
+                                    case "kickReturns":
+                                    case "puntReturns":
+                                        js.AddRange(new List<int> { 0, 1, 4 });
+                                        break;
+                                    case "kicking":
+                                        js.AddRange(new List<int> { 0, 3 });
+                                        break;
+                                    case "punting":
+                                        js.AddRange(new List<int> { 0, 1 });
+                                        break;
+                                }
+                                foreach (var j in js)
+                                {
+                                    <td>@Model.PlayerViewInfoAttended.Games.Values.ToList()[i][index].Stats.Split(',').ToList()[j]</td>
+                                    columnShown += 1;
+                                }
+                            }
+                            else
+                            {
+                                for (int j = 0; j < orderAttended[pos]; j++)
+                                {
+                                    {
+                                        <td>0</td>
+                                    }
+                                }
+                            }
+                        }
+                    }
+                </tr>
+            }
+            <tr>
+                @if (Model.PlayerViewInfoAttended.PlayerGames.Count != 0)
+                {
+                    <th colspan="3">Totals</th>
+                    @foreach (var sum in Model.PlayerViewInfoAttended.Sums)
+                    {
+                        <th>@sum</th>
+                    }
+                }
+                else
+                {
+                    <td colspan=@columnCount style="text-align: center">No Games Attended</td>
+                }
+
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+
+    function ChangeView(selectedView) {
+        if (selectedView === "Watched") {
+            document.getElementById("PlayerWatched").style.display = "block";
+            document.getElementById("PlayerAttended").style.display = "none";
+        }
+        else if (selectedView === "Attended") {
+            document.getElementById("PlayerWatched").style.display = "none";
+            document.getElementById("PlayerAttended").style.display = "block";
+        }
+    }
+</script>
+

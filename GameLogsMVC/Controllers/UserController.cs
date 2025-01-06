@@ -42,17 +42,11 @@ namespace GameLogsMVC.Controllers
                 userView.Change = false;
             }
             
-            userView.Count = await _dbContext.UserGame.Where(u => u.UserID == userView.ID).CountAsync();
+            List<string> userGames = _dbContext.UserGame.Where(u => u.UserID == userView.ID && u.Attended == "A").Select(u => u.GameID).ToList();
 
-            var countCurrent = await _dbContext.UserGame
-                .Join(
-                _dbContext.Game,
-                userGame => userGame.GameID,  
-                game => game.ID,              
-                (userGame, game) => new { UserGame = userGame, Game = game }
-                )
-                .Where(joined => joined.UserGame.UserID == userView.ID && joined.Game.Date.Substring(0, 4) == DateTime.Now.Year.ToString())
-                .CountAsync();
+            userView.Count = userGames.Count();
+
+            var countCurrent = _dbContext.Game.Where(g => userGames.Contains(g.ID) && g.Date.Substring(0, 4) == DateTime.Now.Year.ToString()).Count();
 
             userView.CountCurrent = countCurrent;
 
@@ -69,7 +63,7 @@ namespace GameLogsMVC.Controllers
                 userView.SameGames = userView.SameGames.OrderByDescending(g => g.Date).ToList();
             }
 
-            Dictionary<string, string> favTeams = _dbContext.User.Where(u => u.ID == userView.ID).Select(u => new Dictionary<string, string> { { "MLB", u.FavMLB },{ "NBA", u.FavNBA },{ "NFL", u.FavNFL },{ "NCAAF", u.FavNCAAF }}).FirstOrDefault();
+            Dictionary<string, string> favTeams = _dbContext.User.Where(u => u.ID == userView.ID).Select(u => new Dictionary<string, string> { { "MLB", u.FavMLB },{ "NBA", u.FavNBA },{ "NFL", u.FavNFL },{ "NCAAF", u.FavNCAAF },{ "NCAAB", u.FavNCAAB } }).FirstOrDefault();
             if (!favTeams.IsNullOrEmpty())
             {
                 foreach (var key in favTeams.Keys)
@@ -96,7 +90,8 @@ namespace GameLogsMVC.Controllers
             editProfileView.NFLTeams.AddRange(_dbContext.Team.Where(t => t.League == "NFL").ToList());
             editProfileView.NBATeams.AddRange(_dbContext.Team.Where(t => t.League == "NBA").ToList());
             editProfileView.NCAAFTeams.AddRange(_dbContext.Team.Where(t => t.League == "NCAAF").ToList());
-            List<string> favTeams = _dbContext.User.Where(u => u.ID == editProfileView.User.ID).Select(u => new List<string> { u.FavMLB, u.FavNBA, u.FavNFL, u.FavNCAAF }).FirstOrDefault();
+            editProfileView.NCAABTeams.AddRange(_dbContext.Team.Where(t => t.League == "NCAAB").ToList());
+            List<string> favTeams = _dbContext.User.Where(u => u.ID == editProfileView.User.ID).Select(u => new List<string> { u.FavMLB, u.FavNBA, u.FavNFL, u.FavNCAAF, u.FavNCAAB }).FirstOrDefault();
             if (!favTeams.IsNullOrEmpty())
             {
                 foreach (var team in favTeams)
@@ -114,12 +109,12 @@ namespace GameLogsMVC.Controllers
             return View(editProfileView);
         }
 
-        public IActionResult Diary(string userName, string league)
+        public IActionResult Log(string userName, string league)
         {
             DiaryView diaryView = new DiaryView();
             diaryView.User = userName;
             diaryView.League = league;
-            diaryView.GameResult = GetUserGames(league , userName);
+            diaryView.GameResult = GetUserGames(league , userName)[1];
             return View(diaryView);
         }
 
@@ -128,116 +123,25 @@ namespace GameLogsMVC.Controllers
             StatsView statsView = new StatsView();
             statsView.League = league;
             statsView.User = userName;
-            if (league != "Favorites")
+
+            GameResult resultWatched = GetUserGames(league, userName)[1];
+            GameResult resultAttended = GetUserGames(league, userName)[0];
+            List<string> gameIdsWatched = new List<string>();
+            List<string> gameIdsAttended = new List<string>();
+            foreach (var games in resultWatched.games)
             {
-                GameResult results = GetUserGames(league, userName);
-                if (results.games.Count() != 0)
-                {
-                    List<string> gameIds = new List<string>();
-                    foreach (var g in results.games)
-                    {
-                        gameIds.Add(g.ID);
-                    }
-                    switch (league)
-                    {
-                        case "MLB":
-                            statsView.Player = GetFrequentPlayer("batting", gameIds);
-                            statsView.Pitcher = GetFrequentPlayer("pitching", gameIds);
-                            statsView.LongGame = GetShortLongGame(results.games, "L");
-                            statsView.ShortGame = GetShortLongGame(results.games, "S");
-                            List<int> MLBindex = new List<int> { 3, 2, 5, 4, 0, 5 };
-                            List<string> MLBpositions = new List<string> { "batting", "batting", "batting", "batting", "pitching", "pitching" };
-                            statsView.Stats = GetHighStat(MLBindex, gameIds, MLBpositions);
-                            List<Dictionary<string, string>> MLBaccStats = GetAccumulatedStat(MLBindex, gameIds, MLBpositions);
-                            statsView.Stats.AddRange(MLBaccStats);
-                            break;
-                        case "NBA":
-                            statsView.Player = GetFrequentPlayer("", gameIds);
-                            List<int> NBAindex = new List<int> { 13, 6, 7, 8, 9 };
-                            List<string> NBApositions = new List<string> { "", "", "", "", "" };
-                            statsView.Stats = GetHighStat(NBAindex, gameIds, NBApositions);
-                            List<Dictionary<string, string>> NBAaccStats = GetAccumulatedStat(NBAindex, gameIds, NBApositions);
-                            statsView.Stats.AddRange(NBAaccStats);
-                            break;
-                        case "NCAAB":
-                            statsView.Player = GetFrequentPlayer("", gameIds);
-                            List<int> NCAABindex = new List<int> { 12, 6, 7, 8, 9 };
-                            List<string> NCAABpositions = new List<string> { "", "", "", "", "" };
-                            statsView.Stats = GetHighStat(NCAABindex, gameIds, NCAABpositions);
-                            List<Dictionary<string, string>> NCAABaccStats = GetAccumulatedStat(NCAABindex, gameIds, NCAABpositions);
-                            statsView.Stats.AddRange(NCAABaccStats);
-                            break;
-                        case "NFL":
-                        case "NCAAF":
-                            statsView.Player = GetFrequentPlayer("", gameIds);
-                            List<int> NFLindex = new List<int> { 1, 1, 4, 1, 4, 2 };
-                            List<string> NFLpositions = new List<string> { "passing", "rushing", "rushing", "receiving", "receiving", "kicking" };
-                            List<int> NFLaccindex = new List<int> { 1, 3, 1, 3, 1, 3, 0, 0, 2, 0 };
-                            List<string> NFLaccpositions = new List<string> { "passing", "passing", "rushing", "rushing", "receiving", "receiving", "interceptions", "defensive", "defensive", "kicking" };
-                            statsView.Stats = GetHighStat(NFLindex, gameIds, NFLpositions);
-                            List<Dictionary<string, string>> NFLaccStats = GetAccumulatedStat(NFLaccindex, gameIds, NFLaccpositions);
-                            statsView.Stats.AddRange(NFLaccStats);
-                            break;
-
-                    }
-
-                    statsView.Games = gameIds.Count();
-                    statsView.TeamsSeen = results.games.SelectMany(g => new[] { g.Away, g.Home }).Distinct().Count();
-                    statsView.TeamsVisited = results.games.Where(g => g.NeutralSite == "False").Select(g => g.Home).Distinct().Count();
-
-                    Game impactGame = results.games
-                    .Where(g => !string.IsNullOrEmpty(g.ImpactPlay))
-                    .ToList()
-                    .OrderByDescending(g => double.Parse(g.ImpactPlay.Substring(g.ImpactPlay.LastIndexOf(' ') + 1).Trim('%')) / 100.0)
-                    .FirstOrDefault();
-                    statsView.Play = impactGame.ImpactPlay;
-
-                    Game highestScoring = results.games
-                    .OrderByDescending(g => int.Parse(g.Score.Substring(0, g.Score.IndexOf('-'))) + int.Parse(g.Score.Substring(g.Score.IndexOf('-') + 1)))
-                    .FirstOrDefault();
-                    statsView.HighScoring.Add(highestScoring.Date + ", " + highestScoring.Home + " vs. " + highestScoring.Away, highestScoring.Score);
-
-                }
+                gameIdsWatched.Add(games.ID);
             }
-            else
+            foreach (var games in resultAttended.games)
             {
-                List<string> favTeams = _dbContext.User.Where(u => u.ID == userName).Select(u => new List<string> { u.FavMLB, u.FavNBA, u.FavNFL, u.FavNCAAF }).FirstOrDefault();
-                List<string> userGames = _dbContext.UserGame.Where(ug => ug.UserID == userName).Select(ug => ug.GameID).ToList();
-                foreach (var team in favTeams)
-                {
-                    if (team != "")
-                    {
-                        int count = _dbContext.Game.Where(g => userGames.Contains(g.ID) && (g.Away == team || g.Home == team)).Count();
-                        Dictionary<string, int> favCount = new Dictionary<string, int> { { team, count } };
-                        statsView.FavsCount.Add(favCount);
-                        var wins = _dbContext.Game
-                        .Where(g => userGames.Contains(g.ID))
-                        .AsEnumerable() // Switch to client-side evaluation
-                        .Count(g =>
-                        {
-                            var parts = g.Score.Split('-');
-                            var homeScore = int.Parse(parts[0]);
-                            var awayScore = int.Parse(parts[1]);
-                            return (g.Home == team && homeScore > awayScore) ||
-                                   (g.Away == team && awayScore > homeScore);
-                        });
-                        var losses = _dbContext.Game
-                        .Where(g => userGames.Contains(g.ID))
-                        .AsEnumerable() // Switch to client-side evaluation
-                        .Count(g =>
-                        {
-                            var parts = g.Score.Split('-');
-                            var homeScore = int.Parse(parts[0]);
-                            var awayScore = int.Parse(parts[1]);
-                            return (g.Home == team && homeScore < awayScore) ||
-                                   (g.Away == team && awayScore < homeScore);
-                        });
-                        Dictionary<string, string> favRecord = new Dictionary<string, string> { { team, wins.ToString() + "-" + losses.ToString()} };
-                        statsView.FavsRecord.Add(favRecord);
-                    }
-
-                }
+                gameIdsAttended.Add(games.ID);
             }
+            if (resultWatched.games.Count()!=0 || league == "Favorites")
+            {
+                statsView.StatsWatched = GetStatsForView(gameIdsWatched, resultWatched, league, userName, "");
+                statsView.StatsAttended = GetStatsForView(gameIdsAttended, resultAttended, league, userName, "A");
+            }
+            
             return View(statsView);
         }
 
@@ -251,7 +155,7 @@ namespace GameLogsMVC.Controllers
                 IBadgeChecker badgeChecker = _badgeCheckerFactory.GetBadgeChecker(badge.ID);
                 if (badgeChecker != null)
                 {
-                    var (progress, completion) = badgeChecker.CheckCompletion(userName, false);
+                    var (progress, completion, gameID, index, leagues, homeIDs, awayIDs, playerIDs) = badgeChecker.CheckCompletion(userName, false);
                     badgeView.Completion.Add(completion);
                     badgeView.Progress.Add(progress);
                 }
@@ -295,15 +199,19 @@ namespace GameLogsMVC.Controllers
             user.FavNBA = favTeam.FavNBA;
             user.FavNFL = favTeam.FavNFL;
             user.FavNCAAF = favTeam.FavNCAAF;
+            user.FavNCAAB = favTeam.FavNCAAB;
             await _dbContext.SaveChangesAsync();
             return Ok("Success");
         }
 
-        public GameResult GetUserGames(string league, string userId)
+        public List<GameResult> GetUserGames(string league, string userId)
         {
-            GameResult gameResults = new GameResult();
+            GameResult gameResultAttended = new GameResult();
+            GameResult gameResultWatched = new GameResult();
+            List<GameResult> gameResults = new List<GameResult> { gameResultAttended, gameResultWatched };
             List<Game> gameIDs = new List<Game>();
             List<bool> attendance = new List<bool>();
+            List<bool> watched = new List<bool>();
             string viewerId = Request.Cookies["userID"];
             List<string> userGames = _dbContext.UserGame
             .Where(UserGame => UserGame.UserID == userId)
@@ -323,11 +231,7 @@ namespace GameLogsMVC.Controllers
 
             foreach (var game in gameIDs)
             {
-                if (userId == viewerId)
-                {
-                    attendance.Add(true);
-                }
-                else if(viewerId == null)
+                if(viewerId == null)
                 {
                     attendance = null;
                 }
@@ -336,31 +240,66 @@ namespace GameLogsMVC.Controllers
                     UserGame match = _dbContext.UserGame.Where(ug => ug.GameID == game.ID && ug.UserID == viewerId).FirstOrDefault();
                     if (match != null)
                     {
-                        attendance.Add(true);
-                    }
+                        if (match.Attended == "A")
+                        {
+                            attendance.Add(true);
+                        }
+                        else
+                        {
+                            attendance.Add(false);
+                        }
+
+                        if (match.Attended == "W")
+                        {
+                            watched.Add(true);
+                        }
+                        else
+                        {
+                            watched.Add(false);
+                        }
+                    }                  
                     else
                     {
                         attendance.Add(false);
+                        watched.Add(false);
                     }
                 }
             }
-            
 
-            gameResults.games = gameIDs;
-            gameResults.attended = attendance;
+            gameResults[1].games = gameIDs;
+            gameResults[1].attended = attendance;
+            gameResults[1].watched = watched;
+
+            List<string> userGamesAttended = _dbContext.UserGame
+            .Where(UserGame => UserGame.UserID == userId && UserGame.Attended == "A")
+            .Select(UserGame => UserGame.GameID)
+            .ToList();
+
+            List<Game> gameIDsAttended = new List<Game>();
+
+            for (int i = 0; i < userGamesAttended.Count(); i++)
+            {
+                Game userGame = _dbContext.Game.Where(Game => Game.ID == userGamesAttended[i]).FirstOrDefault();
+                if (userGame.League == league)
+                {
+                    gameIDsAttended.Add(userGame);
+                }
+            }
+
+            gameResults[0].games = gameIDsAttended;
 
             return gameResults;
         }
 
-        public Dictionary<string, int> GetFrequentPlayer(string position, List<string> gameIds)
+        public Dictionary<string, List<string>> GetFrequentPlayer(string position, List<string> gameIds)
         {
             List<PlayerGame> playerGames = _dbContext.PlayerGame.Where(pg => gameIds.Contains(pg.GameID) && pg.Position == position && pg != null).ToList();
-            Dictionary<string, int> playerGameCountDictionary = _dbContext.PlayerGame
-            .Where(pg => gameIds.Contains(pg.GameID) && (string.IsNullOrEmpty(position) || pg.Position == position))
+            Dictionary<string, List<string>> playerGameCountDictionary = _dbContext.PlayerGame
+            .Where(pg => gameIds.Contains(pg.GameID) && (string.IsNullOrEmpty(position) || pg.Position == position) && pg.Stats != "")
             .ToList()
             .GroupBy(pg => pg.PlayerID)
             .OrderByDescending(group => group.Select(pg => pg.GameID).Distinct().Count())
-            .Take(3)
+            .Take(10)
             .Join
             (
                 _dbContext.Player,
@@ -369,16 +308,16 @@ namespace GameLogsMVC.Controllers
                 (pg, p) => new { PlayerID = pg.Key, PlayerName = p.Name, GameCount = pg.Select(x => x.GameID).Distinct().Count() }
             )
             .ToDictionary(
-                item => item.PlayerName,   // Key selector (PlayerName)
-                item => item.GameCount     // Value selector (GameCount)
+                item => item.PlayerID,
+                item => new List<string> { item.PlayerName, item.GameCount.ToString() }
             );
 
             return playerGameCountDictionary;
         }
 
-        public Dictionary<string, string> GetShortLongGame (List<Game> games, string length)
+        public Game GetShortLongGame (List<Game> games, string length)
         {
-            Dictionary<string, string> gameLengthDictionary = new Dictionary<string, string>();
+            List<string> gameLength = new List<string>();
             Game game = new Game();
             if(length == "L")
             {
@@ -396,17 +335,16 @@ namespace GameLogsMVC.Controllers
                 .OrderBy(g => g.Duration)
                 .FirstOrDefault();
             }
-
-            gameLengthDictionary.Add(game.Date + ", " + game.Away + " @ " + game.Home, game.Duration);
-            return gameLengthDictionary;
+  
+            return game;
         }
 
-        public List<Dictionary<string, string>> GetAccumulatedStat(List<int> indexes, List<string> gameIds, List<string> positions)
+        public List<Dictionary<List<string>, string>> GetAccumulatedStat(List<int> indexes, List<string> gameIds, List<string> positions)
         {
-            List<Dictionary<string, string>> statsList = new List<Dictionary<string, string>>();
+            List<Dictionary<List<string>, string>> statsList = new List<Dictionary<List<string>, string>>();
             for (int i = 0; i < indexes.Count(); i++)
             {
-                Dictionary<string, string> highStat = _dbContext.PlayerGame
+                Dictionary<List<string>, string> highStat = _dbContext.PlayerGame
                 .Where(pg => gameIds.Contains(pg.GameID) && !string.IsNullOrEmpty(pg.Stats))
                 .ToList()
                 .Where(pg => pg.Stats.Split(',').Length > indexes[i] && pg.Position == positions[i])
@@ -425,14 +363,15 @@ namespace GameLogsMVC.Controllers
                     (pg, p) => new
                     {
                         PlayerName = p.Name,
+                        PlayerID = p.ID,
                         HRSum = positions[i] == "pitching" && indexes[i] == 0
                             ? pg.Sum(item => ConvertToDecimalInnings(item.Stats, indexes[i]))
                             : (positions[i] == "kicking"
                                 ? pg.Sum(item => item.Stats.Split(',')[indexes[i]][0] - '0') // Sum of the first character as integer
-                                : pg.Sum(item => int.Parse(item.Stats.Split(',')[indexes[i]])))
+                                : pg.Sum(item => double.Parse(item.Stats.Split(',')[indexes[i]])))
                     })
                 .ToDictionary(
-                    item => item.PlayerName,
+                    item => new List<string> { item.PlayerName, item.PlayerID },
                     item => (positions[i] == "pitching" && indexes[i] == 0)
                             ? ConvertToBaseballInningsString(item.HRSum)
                             : item.HRSum.ToString()
@@ -445,12 +384,12 @@ namespace GameLogsMVC.Controllers
             return statsList;
         }
 
-        public List<Dictionary<string, string>> GetHighStat(List<int> indexes, List<string> gameIds, List<string> positions)
+        public List<Dictionary<List<string>, string>> GetHighStat(List<int> indexes, List<string> gameIds, List<string> positions)
         {
-            List<Dictionary<string, string>> statsList = new List<Dictionary<string, string>>();
+            List<Dictionary<List<string>, string>> statsList = new List<Dictionary<List<string>, string>>();
             for (int i = 0; i < indexes.Count(); i++)
             {
-                Dictionary<string, string> highStat = _dbContext.PlayerGame
+                Dictionary<List<string>, string> highStat = _dbContext.PlayerGame
                     .Where(pg => gameIds.Contains(pg.GameID) && !string.IsNullOrEmpty(pg.Stats) && pg.Position == positions[i])
                     .ToList()
                     .Where(pg => !string.IsNullOrEmpty(pg.Stats.Split(',')[indexes[i]]))
@@ -472,13 +411,16 @@ namespace GameLogsMVC.Controllers
                         (result, p) => new
                         {
                             PlayerName = p.Name,
+                            PlayerID = result.PlayerID,
                             Team = result.TeamID,
                             GameID = result.GameID,
                             MaxStat = result.MaxStat
                         })
                     .Select(result => new
                     {
-                        PlayerName = result.PlayerName + ", " + result.Team, // Concatenate PlayerName and Team
+                        PlayerName = result.PlayerName,
+                        PlayerID = result.PlayerID,
+                        result.Team,// Concatenate PlayerName and Team
                         result.MaxStat,
                         result.GameID
                     })
@@ -488,7 +430,7 @@ namespace GameLogsMVC.Controllers
                         g => g.ID,
                         (result, g) => new
                         {
-                            PlayerName = result.PlayerName + ", " + DateTime.Parse(g.Date).ToString("yyyy-MM-dd") + " " + g.Away + " @ " + g.Home,
+                            PlayerName = new List<string> { g.ID, g.Home != result.Team ? g.AwayTeamID : g.HomeTeamID, g.Home != result.Team ? g.HomeTeamID : g.AwayTeamID, result.PlayerID, result.PlayerName, DateTime.Parse(g.Date).ToString("yyyy-MM-dd"), result.Team, g.Away != result.Team ? g.Away : g.Home },
                             result.MaxStat
                         })
                     .ToDictionary(
@@ -501,6 +443,110 @@ namespace GameLogsMVC.Controllers
             }
 
             return statsList;
+        }
+
+        public StatsView.Stats GetStatsForView (List<string> gameIds, GameResult results, string league, string userName, string attended)
+        {
+            StatsView.Stats statsView = new StatsView.Stats();
+            if (league != "Favorites")
+            {
+                switch (league)
+                {
+                    case "MLB":
+                        statsView.Player = GetFrequentPlayer("batting", gameIds);
+                        statsView.Pitcher = GetFrequentPlayer("pitching", gameIds);
+                        statsView.GameStats.Add(GetShortLongGame(results.games, "L"));
+                        statsView.GameStats.Add(GetShortLongGame(results.games, "S"));
+                        List<int> MLBindex = new List<int> { 3, 2, 5, 4, 0, 5 };
+                        List<string> MLBpositions = new List<string> { "batting", "batting", "batting", "batting", "pitching", "pitching" };
+                        statsView.SingleStats = GetHighStat(MLBindex, gameIds, MLBpositions);
+                        statsView.AccStats = GetAccumulatedStat(MLBindex, gameIds, MLBpositions);
+                        break;
+                    case "NBA":
+                        statsView.Player = GetFrequentPlayer("", gameIds);
+                        List<int> NBAindex = new List<int> { 13, 6, 7, 8, 9 };
+                        List<string> NBApositions = new List<string> { "", "", "", "", "" };
+                        statsView.SingleStats = GetHighStat(NBAindex, gameIds, NBApositions);
+                        statsView.AccStats = GetAccumulatedStat(NBAindex, gameIds, NBApositions);
+                        break;
+                    case "NCAAB":
+                        statsView.Player = GetFrequentPlayer("", gameIds);
+                        List<int> NCAABindex = new List<int> { 12, 6, 7, 8, 9 };
+                        List<string> NCAABpositions = new List<string> { "", "", "", "", "" };
+                        statsView.SingleStats = GetHighStat(NCAABindex, gameIds, NCAABpositions);
+                        statsView.AccStats = GetAccumulatedStat(NCAABindex, gameIds, NCAABpositions);
+                        break;
+                    case "NFL":
+                    case "NCAAF":
+                        statsView.Player = GetFrequentPlayer("", gameIds);
+                        List<int> NFLindex = new List<int> { 1, 1, 4, 1, 4, 2 };
+                        List<string> NFLpositions = new List<string> { "passing", "rushing", "rushing", "receiving", "receiving", "kicking" };
+                        List<int> NFLaccindex = new List<int> { 1, 3, 1, 3, 1, 3, 0, 0, 2, 0 };
+                        List<string> NFLaccpositions = new List<string> { "passing", "passing", "rushing", "rushing", "receiving", "receiving", "interceptions", "defensive", "defensive", "kicking" };
+                        statsView.SingleStats = GetHighStat(NFLindex, gameIds, NFLpositions);
+                        statsView.AccStats = GetAccumulatedStat(NFLaccindex, gameIds, NFLaccpositions);
+                        break;
+
+                }
+
+                statsView.Games = gameIds.Count();
+                statsView.TeamsSeen = results.games.SelectMany(g => new[] { g.Away, g.Home }).Distinct().Count();
+                statsView.TeamsVisited = results.games.Where(g => g.NeutralSite == "False").Select(g => g.Home).Distinct().Count();
+
+                Game highestScoring = results.games
+                .OrderByDescending(g => int.Parse(g.Score.Substring(0, g.Score.IndexOf('-'))) + int.Parse(g.Score.Substring(g.Score.IndexOf('-') + 1)))
+                .FirstOrDefault();
+                statsView.GameStats.Add(highestScoring);
+
+                Game impactGame = results.games
+                .Where(g => !string.IsNullOrEmpty(g.ImpactPlay))
+                .ToList()
+                .OrderByDescending(g => double.Parse(g.ImpactPlay.Substring(g.ImpactPlay.LastIndexOf(' ') + 1).Trim('%')) / 100.0)
+                .FirstOrDefault();
+                statsView.GameStats.Add(impactGame);
+
+
+            }
+            else
+            {
+                Dictionary<string, string> favTeams = _dbContext.User.Where(u => u.ID == userName).Select(u => new Dictionary<string, string> { { "MLB", u.FavMLB }, { "NBA", u.FavNBA }, { "NFL", u.FavNFL }, { "NCAAF", u.FavNCAAF }, { "NCAAB", u.FavNCAAB } }).FirstOrDefault();
+                List<string> userGames = _dbContext.UserGame.Where(ug => ug.UserID == userName && ug.Attended.Contains(attended)).Select(ug => ug.GameID).ToList();
+                foreach (var favTeam in favTeams.Keys)
+                {
+                    if (favTeams[favTeam] != "")
+                    {
+                        int count = _dbContext.Game.Where(g => userGames.Contains(g.ID) && (g.Away == favTeams[favTeam] || g.Home == favTeams[favTeam]) && g.League == favTeam).Count();
+                        Dictionary<string, List<string>> favCount = new Dictionary<string, List<string>> { { favTeam, new List<string> { favTeams[favTeam], count.ToString() } } };
+                        statsView.FavsCount.Add(favCount);
+                        var wins = _dbContext.Game
+                        .Where(g => userGames.Contains(g.ID) && g.League == favTeam)
+                        .AsEnumerable() // Switch to client-side evaluation
+                        .Count(g =>
+                        {
+                            var parts = g.Score.Split('-');
+                            var homeScore = int.Parse(parts[0]);
+                            var awayScore = int.Parse(parts[1]);
+                            return (g.Home == favTeams[favTeam] && homeScore > awayScore) ||
+                                   (g.Away == favTeams[favTeam] && awayScore > homeScore);
+                        });
+                        var losses = _dbContext.Game
+                        .Where(g => userGames.Contains(g.ID) && g.League == favTeam)
+                        .AsEnumerable() // Switch to client-side evaluation
+                        .Count(g =>
+                        {
+                            var parts = g.Score.Split('-');
+                            var homeScore = int.Parse(parts[0]);
+                            var awayScore = int.Parse(parts[1]);
+                            return (g.Home == favTeams[favTeam] && homeScore < awayScore) ||
+                                   (g.Away == favTeams[favTeam] && awayScore < homeScore);
+                        });
+                        Dictionary<string, List<string>> favRecord = new Dictionary<string, List<string>> { { favTeam, new List<string> { favTeams[favTeam], wins.ToString() + "-" + losses.ToString() } } };
+                        statsView.FavsRecord.Add(favRecord);
+                    }
+
+                }
+            }
+            return statsView;
         }
 
         // Function to convert innings from baseball notation to decimal notation

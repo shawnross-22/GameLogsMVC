@@ -61,7 +61,7 @@
 @if(Model.League == "NFL" || Model.League == "NCAAF")
 {
     <select id="yearSelect" onchange="ChangeYear(this.value)">
-        @for (int year = 2023; year > 2002; year--)
+        @for (int year = 2024; year > 2002; year--)
         {
             <option value="@year" selected="@(Model.Dates.Substring(0,4) == Convert.ToString(year))">@year</option>
         }
@@ -100,7 +100,7 @@ else
 <table>
     <thead>
         <tr>
-            <th colspan="4" style="background-color: lightgray">Regular Season</th>
+            <th colspan="5" style="background-color: lightgray">Regular Season</th>
         </tr>
         <tr>
             <th>Date</th>
@@ -109,7 +109,11 @@ else
             @if(Model.regularSchedule.Results[0].attended != null)
             {
                 <th>Attended</th>
-            }         
+            }
+            @if (Model.regularSchedule.Results[0].watched != null)
+            {
+                <th>Watched</th>
+            }
         </tr>
     </thead>
     <tbody>
@@ -117,17 +121,26 @@ else
         {
             <tr>
                 <td>@game.date</td>
-                <td>@game.opponent</td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = Model.League, teamID = @game.opponentID})">@game.opponent</a></td>
                 <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
                 @if (game.attended != null)
                 {
                     <td>
                         @if (game.score != null)
                         {
-                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'A')" @(game.attended == true ? "checked" : "")>
                         }
                     </td>
-                }              
+                }
+                @if (game.watched != null)
+                {
+                    <td>
+                        @if (game.score != null)
+                        {
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'W')" @(game.watched == true ? "checked" : "")>
+                        }
+                    </td>
+                }
             </tr>
         }
     </tbody>
@@ -135,7 +148,7 @@ else
     {
         <thead>
             <tr>
-                <th colspan="4" style="background-color: lightgray">Play In</th>
+                <th colspan="5" style="background-color: lightgray">Play In</th>
             </tr>
         </thead>
         <tbody>
@@ -143,14 +156,23 @@ else
             {
                 <tr>
                     <td>@game.date</td>
-                    <td>@game.opponent</td>
+                    <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = Model.League, teamID = @game.opponentID})">@game.opponent</a></td>
                     <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
                     @if (game.attended != null)
                     {
                         <td>
                             @if (game.score != null)
                             {
-                                <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                                <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'A')" @(game.attended == true ? "checked" : "")>
+                            }
+                        </td>
+                    }
+                    @if (game.watched != null)
+                    {
+                        <td>
+                            @if (game.score != null)
+                            {
+                                <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'W')" @(game.watched == true ? "checked" : "")>
                             }
                         </td>
                     }
@@ -160,7 +182,7 @@ else
     }
     <thead>
         <tr>
-            <th colspan="4" style="background-color: lightgray">Postseason</th>
+            <th colspan="5" style="background-color: lightgray">Postseason</th>
         </tr>
     </thead>
     <tbody>
@@ -168,14 +190,23 @@ else
         {
             <tr>
                 <td>@game.date</td>
-                <td>@game.opponent</td>
+                <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = Model.League, teamID = @game.opponentID})">@game.opponent</a></td>
                 <td><a href="@Url.Action("BoxScore", "Home", new { id = @game.id, league = @Model.League})">@game.score</a></td>
                 @if (game.attended != null)
                 {
                     <td>
                         @if (game.score != null)
                         {
-                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this)" @(game.attended == true ? "checked" : "")>
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'A')" @(game.attended == true ? "checked" : "")>
+                        }
+                    </td>
+                }
+                @if (game.watched != null)
+                {
+                    <td>
+                        @if (game.score != null)
+                        {
+                            <input type="checkbox" id="myCheck" onclick="Log(@game.id, '@game.date', this, 'W')" @(game.watched == true ? "checked" : "")>
                         }
                     </td>
                 }
@@ -217,7 +248,7 @@ else
         window.location.href = newUrl;
     }
 
-    function Log(id, date, checkbox){
+    function Log(id, date, checkbox, attended){
         //document.getElementById('overlay').style.display = 'block';
         if(checkbox.checked){
             datesContainer.innerHTML = date;
@@ -231,7 +262,10 @@ else
                 Date: String(date),
                 Score: "",
                 League: '@Model.League',
-                Location: ""
+                Location: "",
+                Season: attended,
+                HomeTeamID: "",
+                AwayTeamID: ""
             };
             const jsonData = JSON.stringify(data);
             datesContainer.innerHTML = jsonData;
@@ -252,7 +286,8 @@ else
             xhr.setRequestHeader("Content-Type", "application/json");
             const data = {
                 UserID: "",
-                GameID: String(id)
+                GameID: String(id),
+                Attended: attended
             };
             const jsonData = JSON.stringify(data);
             xhr.send(jsonData);

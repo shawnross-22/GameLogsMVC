@@ -10,5 +10,6 @@ namespace GameLogsMVC.Models.DBData
         public string FavNBA { get; set; }
         public string FavNFL { get; set; }
         public string FavNCAAF { get; set; }
+        public string FavNCAAB { get; set; }
     }
 }

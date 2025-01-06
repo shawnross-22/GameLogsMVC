@@ -15,5 +15,8 @@ namespace GameLogsMVC.Models.DBData
         public string ImpactPlay { get; set; }
         public string GameNote { get; set; }
         public string NeutralSite { get; set; }
+        public string Season { get; set; }
+        public string HomeTeamID { get; set; }
+        public string AwayTeamID {get; set; }
     }
 }

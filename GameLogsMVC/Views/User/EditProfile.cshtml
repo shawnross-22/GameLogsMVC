@@ -5,10 +5,10 @@
 <h4>Favorite Teams</h4>
 <div class="favSelect" id="MLBTeams" style="display: flex; align-items: center;">
     <div>Favorite MLB Team: </div>
-    <select id="MLBteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.MLBTeams)', 'MLB')">
+    <select id="MLBteamSelect" onchange="ChangeTeam(this.value, 'MLB')">
         @foreach (var item in Model.MLBTeams)
         {
-            <option value="@item.Name" selected="@(Model.FavTeams[0].Name == @item.Name)">@item.Name</option>
+            <option value="@($"{item.Name},{item.Url}")" selected="@(Model.FavTeams[0].Name == @item.Name)">@item.Name</option>
         }
         <option value="None" selected="@(Model.FavTeams[0].Name == null)">None</option>
     </select>
@@ -17,10 +17,10 @@
 
 <div class="favSelect" id="NBATeams" style="display: flex; align-items: center;">
     <div>Favorite NBA Team: </div>
-    <select id="NBAteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NBATeams)', 'NBA')">
+    <select id="NBAteamSelect" onchange="ChangeTeam(this.value, 'NBA')">
         @foreach (var item in Model.NBATeams)
         {
-            <option value="@item.Name" selected="@(Model.FavTeams[1].Name == @item.Name)">@item.Name</option>
+            <option value="@($"{item.Name},{item.Url}")" selected="@(Model.FavTeams[1].Name == @item.Name)">@item.Name</option>
         }
         <option value="None" selected="@(Model.FavTeams[1].Name == null)">None</option>
     </select>
@@ -29,10 +29,10 @@
 
 <div class="favSelect" id="NFLTeams" style="display: flex; align-items: center;">
     <div>Favorite NFL Team: </div>
-    <select id="NFLteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NFLTeams)', 'NFL')">
+    <select id="NFLteamSelect" onchange="ChangeTeam(this.value, 'NFL')">
         @foreach (var item in Model.NFLTeams)
         {
-            <option value="@item.Name" selected="@(Model.FavTeams[2].Name == @item.Name)">@item.Name</option>
+            <option value="@($"{item.Name},{item.Url}")" selected="@(Model.FavTeams[2].Name == @item.Name)">@item.Name</option>
         }
         <option value="None" selected="@(Model.FavTeams[2].Name == null)">None</option>
     </select>
@@ -41,34 +41,36 @@
 
 <div class="favSelect" id="NCAAFTeams" style="display: flex; align-items: center;">
     <div>Favorite NCAAF Team: </div>
-    <select id="NCAAFteamSelect" onchange="ChangeTeam(this.value, '@JsonConvert.SerializeObject(Model.NCAAFTeams)', 'NCAAF')">
+    <select id="NCAAFteamSelect" onchange="ChangeTeam(this.value, 'NCAAF')">
         @foreach (var item in Model.NCAAFTeams)
         {
-            <option value="@item.Name" selected="@(Model.FavTeams[3].Name == @item.Name)">@item.Name</option>
+            <option value="@($"{item.Name},{item.Url}")" selected="@(Model.FavTeams[3].Name == @item.Name)">@item.Name</option>
         }
         <option value="None" selected="@(Model.FavTeams[3].Name == null)">None</option>
     </select>
     <img id="NCAAFlogo" src="@Model.FavTeams[3].Url" alt="" style="@(Model.User.FavNCAAF != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")" />
 </div>
 
+<div class="favSelect" id="NCAABTeams" style="display: flex; align-items: center;">
+    <div>Favorite NCAAB Team: </div>
+    <select id="NCAABteamSelect" onchange="ChangeTeam(this.value, 'NCAAB')">
+        @foreach (var item in Model.NCAABTeams)
+        {
+            <option value="@($"{item.Name},{item.Url}")" selected="@(Model.FavTeams[4].Name == @item.Name)">@item.Name</option>
+        }
+        <option value="None" selected="@(Model.FavTeams[4].Name == null)">None</option>
+    </select>
+    <img id="NCAABlogo" src="@Model.FavTeams[4].Url" alt="" style="@(Model.User.FavNCAAB != "None" ? "width: 50px; height: 50px;" : "display: none; width: 50px; height: 50px;")" />
+</div>
+
 <button type="button" id="saveButton" onclick="SaveChanges('@Model.User.ID')">Save</button>
 <div id="testContainer"></div>
 
 <script>
-    function ChangeTeam(team, teamsJson, league) {
-        var teams = JSON.parse(teamsJson);
-
-
-        // Find the team object in the array with the matching name
-        var selectedTeam = teams.find(function (item) {
-            return item.Name === team;
-        });
-
-        if (selectedTeam) {
-            var logoId = league + 'logo';
-            document.getElementById(logoId).src = selectedTeam.Url;
-            document.getElementById(logoId).style.display = 'block';
-        }
+    function ChangeTeam(value, league) {
+        var logoId = league + 'logo';
+        document.getElementById(logoId).src = value.split(',')[1];
+        document.getElementById(logoId).style.display = 'block';
     }
 
     function SaveChanges(id) {
@@ -79,10 +81,11 @@
 
         const data = {
             ID: id,
-            FavMLB: document.getElementById('MLBteamSelect').value,
-            FavNBA: document.getElementById('NBAteamSelect').value,
-            FavNFL: document.getElementById('NFLteamSelect').value,
-            FavNCAAF: document.getElementById('NCAAFteamSelect').value
+            FavMLB: document.getElementById('MLBteamSelect').value.split(',')[0],
+            FavNBA: document.getElementById('NBAteamSelect').value.split(',')[0],
+            FavNFL: document.getElementById('NFLteamSelect').value.split(',')[0],
+            FavNCAAF: document.getElementById('NCAAFteamSelect').value.split(',')[0],
+            FavNCAAB: document.getElementById('NCAABteamSelect').value.split(',')[0]
         };
 
         const jsonData = JSON.stringify(data);

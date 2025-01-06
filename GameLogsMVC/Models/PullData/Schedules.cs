@@ -40,7 +40,8 @@
         public class CompetitorTeam
         {
             public string Name { get; set; }
-            public string DisplayName { get; set; }// The property representing the team name
+            public string DisplayName { get; set; }
+            public string ID { get; set; }// The property representing the team name
                                               // Add other properties related to the team if needed
         }
 

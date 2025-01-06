@@ -9,6 +9,7 @@ namespace GameLogsMVC.Models.ViewData
         public List<DBData.Team> NBATeams { get; set; }
         public List<DBData.Team> NFLTeams { get; set; }
         public List<DBData.Team> NCAAFTeams { get; set; }
+        public List<DBData.Team> NCAABTeams { get; set; }
         public List<DBData.Team> FavTeams { get; set; }
 
         public EditProfileView()
@@ -17,6 +18,7 @@ namespace GameLogsMVC.Models.ViewData
             NBATeams = new List<DBData.Team>();
             NFLTeams = new List<DBData.Team>();
             NCAAFTeams = new List<DBData.Team>();
+            NCAABTeams = new List<DBData.Team>();
             FavTeams = new List<DBData.Team>();
         }
     }

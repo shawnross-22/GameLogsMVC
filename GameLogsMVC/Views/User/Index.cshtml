@@ -14,7 +14,7 @@
     }
 
     .gamesContainer {
-        width: 100%;
+        max-width: 100%;
     }
 
     .headerBar {
@@ -43,8 +43,8 @@
         display: flex;
         justify-content: space-around;
         margin: auto;
-        padding: 10px;
-        margin-bottom: 20px;
+        padding: 1%;
+        margin-bottom: 2%;
     }
 
     .navbarUL {
@@ -52,10 +52,14 @@
         margin: 0;
         padding: 0;
         display: flex;
+        max-width: 100%;
     }
 
     .nav-item {
-        margin-right: 15px;
+        display: inline-block;
+        margin-right: 2%;
+        max-width: 18%;
+        font-size: 15px;
     }
 
     .nav-link {
@@ -74,6 +78,30 @@
         border: 2px solid #000;
         background-color: #fff;
         border-radius: 10px;
+    }
+
+    @@media (max-width: 750px) {
+        .nav-item {
+            font-size: 9px;
+            text-align: left;
+        }
+
+        h2 {
+            font-size: 11px;
+        }
+
+        h3 {
+            font-size: 10px;
+        }
+
+        h4, th, td {
+            font-size: 9px;
+        }
+    }
+
+
+    .favTeams {
+
     }
 </style>
 
@@ -217,10 +245,10 @@
     <h3>This Year: @Model.CountCurrent</h3>
 </div>
 
-<div id="userNavBar" class="navbar">
-    <ul class="navbarUL">
+<div id="userNavBar" class="navbar" style="max-width: 100%; width: 100%">
+    <ul class="navbarUL" style="justify-content: center;">
         <li class="nav-item">
-            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Diary" asp-route-userName="@Model.ID" asp-route-league="MLB">Diary</a>
+            <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Log" asp-route-userName="@Model.ID" asp-route-league="MLB">Log</a>
         </li>
         <li class="nav-item">
             <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Stats" asp-route-userName="@Model.ID" asp-route-league="MLB">Stats</a>
@@ -237,32 +265,28 @@
     </ul>
 </div>
 
-<div class="favTeams" style="display: flex; justify-content: flex-start; align-items: center;">
-    <div class="favHeader" style="display: flex; flex-direction: column; align-items: flex-start; margin-right: 50px">
-        <h3>Favorite Teams</h3>    
+<div class="favTeams" style="display: flex; justify-content: space-between; align-items: center; max-width: 100%; padding: 0 20px;">
+    <div class="favHeader">
+        <h3>Favorite Teams</h3>
     </div>
-    
-    @if (Model.FavTeams.Values.All(team => team == null))
+
+    @if (Model.FavTeams.Values.All(team => team == null) && Model.Change)
     {
-        <a class="link" asp-area="" asp-controller="User" asp-action="EditProfile" asp-route-userName="@Model.ID">Add Favorites</a> 
+        <a class="link" asp-area="" asp-controller="User" asp-action="EditProfile" asp-route-userName="@Model.ID">Add Favorites</a>
     }
     else
-    {     
+    {
         @foreach (var key in Model.FavTeams.Keys)
         {
             @if (Model.FavTeams[key] != null)
             {
-                <div class="selectTeams" style="margin-right: 150px">
-                <h4>@key</h4>
-                <img id="MLBFavLogo" src="@Model.FavTeams[key].Url" alt="" style="width: 50px; height: 50px;" />
-
-            </div>
+                <div class="selectTeams" style="display: flex; flex-direction: column; align-items: center;">
+                    <h4>@key</h4>
+                    <img id="MLBFavLogo" src="@Model.FavTeams[key].Url" alt="" style="max-width: 50%; height: auto;" />
+                </div>
             }
-
-        }   
-        
+        }
     }
-
 </div>
     
 
@@ -291,8 +315,8 @@
                 {
                     <tr>
                         <td>@Model.SameGames[i].Date</td>
-                        <td>@Model.SameGames[i].Home</td>
-                        <td>@Model.SameGames[i].Away</td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.SameGames[i].League, teamID = @Model.SameGames[i].HomeTeamID.Replace(Model.SameGames[i].League, "")})">@Model.SameGames[i].Home</a></td>
+                        <td><a style="display: block;" href="@Url.Action("Index", "Team", new {league = @Model.SameGames[i].League, teamID = @Model.SameGames[i].AwayTeamID.Replace(Model.SameGames[i].League, "")})">@Model.SameGames[i].Away</a></td>
                         <td><a href="@Url.Action("BoxScore", "Home", new { id = Model.SameGames[i].ID, league = Model.SameGames[i].League})">@Model.SameGames[i].Score</a></td>
                         <td>@Model.SameGames[i].Location</td>
                     </tr>
