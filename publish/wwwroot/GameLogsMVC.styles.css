@@ -1,0 +1,79 @@
+/* _content/GameLogsMVC/Views/Shared/_Layout.cshtml.rz.scp.css */
+/* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
+for details on configuring this project to bundle and minify static web assets. */
+
+a.navbar-brand[b-ilaccgbvlm] {
+  white-space: normal;
+  text-align: center;
+  word-break: break-all;
+}
+
+a[b-ilaccgbvlm] {
+  color: #0077cc;
+}
+
+.btn-primary[b-ilaccgbvlm] {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.nav-pills .nav-link.active[b-ilaccgbvlm], .nav-pills .show > .nav-link[b-ilaccgbvlm] {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.border-top[b-ilaccgbvlm] {
+  border-top: 1px solid #e5e5e5;
+}
+.border-bottom[b-ilaccgbvlm] {
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.box-shadow[b-ilaccgbvlm] {
+  box-shadow: 0 .25rem .75rem rgba(0, 0, 0, .05);
+}
+
+button.accept-policy[b-ilaccgbvlm] {
+  font-size: 1rem;
+  line-height: inherit;
+}
+
+.footer[b-ilaccgbvlm] {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  white-space: nowrap;
+  line-height: 60px;
+}
+
+.person-icon[b-ilaccgbvlm] {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translateY(-50%);
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+#userNav[b-ilaccgbvlm] {
+    position: absolute;
+    top: 50%; /* Adjust as needed */
+    right: 0;
+    transform: translateY(-50%); /* Vertically center the icon */
+    cursor: pointer;
+    padding-right: 15px;
+}
+
+/* Media query */
+@media (max-width: 768px) {
+    /* Media query styles */
+    #loginIcon[b-ilaccgbvlm], #userNav[b-ilaccgbvlm] {
+        position: relative;
+        top: auto;
+        right: auto;
+        transform: none;
+        padding-right: 0;
+    }
+}
