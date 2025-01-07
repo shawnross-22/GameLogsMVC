@@ -1,1 +1,1 @@
-web: dotnet GameLogsMVC.dll
+web: dotnet publish/GameLogsMVC.dll
