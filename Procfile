@@ -1,1 +1,1 @@
-web: dotnet GameLogsMVC.dll
+web: dotnet ./bin/Release/net9.0/publish/GameLogsMVC.dll
